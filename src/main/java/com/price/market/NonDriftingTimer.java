@@ -11,7 +11,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class NonDriftingTimer implements Closeable {
+public class NonDriftingTimer implements AutoCloseable {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private volatile boolean running = false;
     private final List<MarketDataProcessor> processors = new CopyOnWriteArrayList<>();
@@ -24,17 +24,16 @@ public class NonDriftingTimer implements Closeable {
     private void scheduleNextEvent() {
         if (!running) return;
 
-        // Calculate delay to next second boundary
+        // Precalculate next second boundary timestamp
         long currentMillis = System.currentTimeMillis();
         long nextSecond = ((currentMillis / 1000) + 1) * 1000;
         long delay = nextSecond - currentMillis;
 
         scheduler.schedule(() -> {
-            // Execute event
-            long eventTime = System.currentTimeMillis();
-            handleEvent(eventTime);
+            // Send precalculated timestamp (not current time)
+            handleEvent(nextSecond);
 
-            // Schedule next event (this prevents drift)
+            // Calculate and schedule next event (prevents drift)
             scheduleNextEvent();
         }, delay, TimeUnit.MILLISECONDS);
     }

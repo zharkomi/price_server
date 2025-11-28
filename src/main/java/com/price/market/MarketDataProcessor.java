@@ -14,15 +14,13 @@ import java.io.IOException;
 import java.util.concurrent.Executors;
 
 @Slf4j
-public class MarketDataProcessor implements Closeable {
+public class MarketDataProcessor implements AutoCloseable {
     public final Instrument instrument;
-    private final CandleProcessor candleProcessor;
     private final Disruptor<MarketDataEvent> disruptor;
     private final RingBuffer<MarketDataEvent> ringBuffer;
 
     public MarketDataProcessor(Instrument instrument, CandleProcessor candleProcessor, Configuration configuration) {
         this.instrument = instrument;
-        this.candleProcessor = candleProcessor;
 
         disruptor = new Disruptor<>(
                 MarketDataEvent::new,
@@ -42,9 +40,11 @@ public class MarketDataProcessor implements Closeable {
                 group = group.then(aggregator);
             }
         }
-
-        disruptor.start();
         this.ringBuffer = disruptor.getRingBuffer();
+    }
+
+    public void start(){
+        disruptor.start();
     }
 
     public void handleEvent(MarketDataEvent marketData) {

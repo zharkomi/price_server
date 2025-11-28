@@ -19,21 +19,24 @@ public class Server {
 
     public static void main(String[] args) {
         var configuration = new Configuration();
-        List<Closeable> services = new ArrayList<>();
+        List<AutoCloseable> services = new ArrayList<>();
 
         NonDriftingTimer timer = new NonDriftingTimer();
         timer.start();
         services.add(timer);
 
         ConnectorFactory connectorFactory = new ConnectorFactory(configuration.sources);
+        services.add(connectorFactory);
 
         CandleProcessor candleProcessor = new CandleProcessor();
+        services.add(candleProcessor);
 
         for (Instrument instrument : configuration.instruments) {
             MarketDataProcessor mdp = new MarketDataProcessor(instrument, candleProcessor, configuration);
             connectorFactory.getConnector(instrument).register(mdp);
             services.add(mdp);
             timer.add(mdp);
+            mdp.start();
         }
 
         connectorFactory.start();
@@ -49,14 +52,14 @@ public class Server {
         }
     }
 
-    private static void addShutdownHook(List<Closeable> services) {
+    private static void addShutdownHook(List<AutoCloseable> services) {
         // Register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutting down server...");
 
             // Close all services
             if (services != null) {
-                for (Closeable service : services) {
+                for (AutoCloseable service : services) {
                     try {
                         service.close();
                     } catch (Exception e) {

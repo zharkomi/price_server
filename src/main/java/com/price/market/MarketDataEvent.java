@@ -1,5 +1,6 @@
 package com.price.market;
 
+import com.price.common.TraceableEvent;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,7 +12,7 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @ToString
 @Accessors(fluent = true)
-public class MarketDataEvent {
+public class MarketDataEvent extends TraceableEvent {
     private long timestamp;
     private float price;
     private float volume;

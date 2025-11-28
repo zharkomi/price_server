@@ -1,4 +1,4 @@
-# price_server
+# Market Price Server 
 
 A high-performance Java 21 market data aggregation server that collects real-time cryptocurrency price data from exchanges and aggregates it into OHLCV (Open, High, Low, Close, Volume) candles at configurable timeframes.
 

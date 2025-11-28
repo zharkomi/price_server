@@ -3,6 +3,7 @@ package com.price.common;
 import com.price.market.Instrument;
 import com.price.market.source.Source;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,42 +35,50 @@ public class Configuration {
         String[] instrumentSpecs = instrumentsProperty.split(INSTRUMENT_DELIMITER);
 
         for (String spec : instrumentSpecs) {
-            spec = spec.trim();
-            if (spec.isEmpty()) {
-                continue;
-            }
-
-            // Parse format: BTCUSD@BINANCE
-            String[] parts = spec.split(INSTRUMENT_SEPARATOR);
-            if (parts.length != 2) {
-                throw new IllegalArgumentException("Invalid instrument format: " + spec + ". Expected format: NAME" + INSTRUMENT_SEPARATOR + "SOURCE");
-            }
-
-            String name = parts[0].trim();
-            String sourceStr = parts[1].trim();
-
-            Source source;
-            try {
-                source = Source.valueOf(sourceStr.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Unknown source: " + sourceStr);
-            }
-
-            // Parse timeframes for this instrument
-            int[] timeframes = parseTimeframes(name, source);
-
-            result.add(new Instrument(name, source, timeframes));
+            Instrument instrument = parseInstrument(spec);
+            if (instrument == null) continue;
+            result.add(instrument);
         }
 
         return result;
     }
 
-    private int[] parseTimeframes(String name, Source source) {
-        String propertyKey = ENV_TIMEFRAME_PREFIX + name + INSTRUMENT_SEPARATOR + source;
+    @Nullable
+    private Instrument parseInstrument(String spec) {
+        spec = spec.trim();
+        if (spec.isEmpty()) {
+            return null;
+        }
+
+        // Parse format: SYMBOL@EXCHANGE
+        String[] parts = spec.split(INSTRUMENT_SEPARATOR);
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid instrument format: " + spec + ". Expected format: NAME" + INSTRUMENT_SEPARATOR + "SOURCE");
+        }
+
+        String name = parts[0].trim();
+        String sourceStr = parts[1].trim();
+
+        Source source;
+        try {
+            source = Source.valueOf(sourceStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unknown source: " + sourceStr);
+        }
+
+        // Parse timeframes for this instrument
+        int[] timeframes = parseTimeframes(spec);
+
+        Instrument instrument = new Instrument(name, source, timeframes);
+        return instrument;
+    }
+
+    private int[] parseTimeframes(String spec) {
+        String propertyKey = ENV_TIMEFRAME_PREFIX + spec;
         String timeframesProperty = System.getenv(propertyKey);
 
         if (timeframesProperty == null || timeframesProperty.trim().isEmpty()) {
-            throw new IllegalStateException("Timeframes not configured for " + name + INSTRUMENT_SEPARATOR + source +
+            throw new IllegalStateException("Timeframes not configured for " + spec +
                     ". Expected environment variable: " + propertyKey);
         }
 
@@ -77,39 +86,12 @@ public class Configuration {
         int[] result = new int[timeframeSpecs.length];
 
         for (int i = 0; i < timeframeSpecs.length; i++) {
-            result[i] = parseTimeframeToSeconds(timeframeSpecs[i].trim());
+            result[i] = Util.parseTimeframeToSeconds(timeframeSpecs[i].trim());
         }
 
         return result;
     }
 
-    private int parseTimeframeToSeconds(String timeframe) {
-        if (timeframe.isEmpty()) {
-            throw new IllegalArgumentException("Empty timeframe value");
-        }
-
-        // Extract number and unit (e.g., "1m" -> number=1, unit="m")
-        int numberEnd = 0;
-        while (numberEnd < timeframe.length() && Character.isDigit(timeframe.charAt(numberEnd))) {
-            numberEnd++;
-        }
-
-        if (numberEnd == 0) {
-            throw new IllegalArgumentException("Invalid timeframe format: " + timeframe);
-        }
-
-        int value = Integer.parseInt(timeframe.substring(0, numberEnd));
-        String unit = timeframe.substring(numberEnd).toLowerCase();
-
-        return switch (unit) {
-            case "s" -> value;
-            case "m" -> value * 60;
-            case "h" -> value * 3600;
-            case "d" -> value * 86400;
-            default -> throw new IllegalArgumentException("Unknown timeframe unit: " + unit +
-                    ". Supported units: s, m, h, d");
-        };
-    }
 
     public int getDisruptorBufferSize() {
         String bufferSizeProperty = System.getenv(ENV_BUFFER_SIZE);

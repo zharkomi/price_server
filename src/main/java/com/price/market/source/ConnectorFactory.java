@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class ConnectorFactory {
+public class ConnectorFactory implements AutoCloseable {
     private final Map<Source, Connector> connectors;
 
     public ConnectorFactory(List<Source> sources) {
@@ -21,5 +21,10 @@ public class ConnectorFactory {
 
     public Connector getConnector(Instrument instrument) {
         return connectors.get(instrument.source());
+    }
+
+    @Override
+    public void close() throws Exception {
+
     }
 }
