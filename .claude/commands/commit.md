@@ -59,3 +59,4 @@ Get GIT diff of uncommitted changes
 4. IMPORTANT: Avoid duplicates - refactoring MarketDataProcessor already implies updating dependent components
 5. IMPORTANT: Group all config parameter changes in one line (e.g., "adjust Disruptor configuration" not separate lines per parameter)
 6. Create commit without asking for user confirmation
+7. IMPORTANT: Commit message must contain ONLY the message text - NO AI signatures, NO "Generated with Claude Code", NO "Co-Authored-By" lines
