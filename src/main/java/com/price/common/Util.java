@@ -24,8 +24,7 @@ public class Util {
             case "m" -> value * 60;
             case "h" -> value * 3600;
             case "d" -> value * 86400;
-            default -> throw new IllegalArgumentException("Unknown time unit: " + unit +
-                    ". Supported units: s, m, h, d");
+            default -> -1;
         };
     }
 }

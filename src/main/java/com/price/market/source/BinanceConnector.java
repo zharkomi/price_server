@@ -77,13 +77,13 @@ public class BinanceConnector implements Connector {
             String bidQtyStr = data.getString("B");
             String askQtyStr = data.getString("A");
 
-            float bidPrice = Float.parseFloat(bidPriceStr);
-            float askPrice = Float.parseFloat(askPriceStr);
-            float bidQty = Float.parseFloat(bidQtyStr);
-            float askQty = Float.parseFloat(askQtyStr);
+            double bidPrice = Double.parseDouble(bidPriceStr);
+            double askPrice = Double.parseDouble(askPriceStr);
+            double bidQty = Double.parseDouble(bidQtyStr);
+            double askQty = Double.parseDouble(askQtyStr);
 
-            float midPrice = (bidPrice + askPrice) / 2.0f;
-            float volume = bidQty + askQty;
+            double midPrice = (bidPrice + askPrice) / 2.0;
+            long volume = (long) (bidQty + askQty);
 
             // bookTicker doesn't include event time field, use system time
             long timestamp = System.currentTimeMillis();

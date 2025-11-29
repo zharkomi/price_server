@@ -115,16 +115,16 @@ public class ClickHouseRepository implements Repository, EventHandler<CandleEven
             insertStatement.setString(1, event.instrument());
             insertStatement.setInt(2, event.timeframeMs());
             insertStatement.setLong(3, event.time());
-            insertStatement.setFloat(4, event.open());
-            insertStatement.setFloat(5, event.high());
-            insertStatement.setFloat(6, event.low());
-            insertStatement.setFloat(7, event.close());
-            insertStatement.setFloat(8, event.volume());
+            insertStatement.setDouble(4, event.open());
+            insertStatement.setDouble(5, event.high());
+            insertStatement.setDouble(6, event.low());
+            insertStatement.setDouble(7, event.close());
+            insertStatement.setLong(8, event.volume());
             insertStatement.addBatch();
 
             if (endOfBatch) {
                 int[] results = insertStatement.executeBatch();
-                log.info("Batch inserted {} candles at sequence {}", results.length, sequence);
+                log.debug("Batch inserted {} candles at sequence {}", results.length, sequence);
             }
         } catch (SQLException e) {
             log.error("Failed to insert candle event", e);
@@ -150,11 +150,11 @@ public class ClickHouseRepository implements Repository, EventHandler<CandleEven
                     candle.instrument(instrument);
                     candle.timeframeMs(timeframeMs);
                     candle.time(rs.getLong("time"));
-                    candle.open(rs.getFloat("open"));
-                    candle.high(rs.getFloat("high"));
-                    candle.low(rs.getFloat("low"));
-                    candle.close(rs.getFloat("close"));
-                    candle.volume(rs.getFloat("volume"));
+                    candle.open(rs.getDouble("open"));
+                    candle.high(rs.getDouble("high"));
+                    candle.low(rs.getDouble("low"));
+                    candle.close(rs.getDouble("close"));
+                    candle.volume(rs.getLong("volume"));
                     candles.add(candle);
                     log.info("Retrieved candle: time={}, open={}, high={}, low={}, close={}, volume={}",
                             candle.time(), candle.open(), candle.high(), candle.low(), candle.close(), candle.volume());

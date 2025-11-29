@@ -1,7 +1,7 @@
 package com.price.market;
 
-import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
@@ -27,7 +27,7 @@ public class MarketDataProcessor implements AutoCloseable {
                 configuration.getDisruptorBufferSize(),
                 Executors.defaultThreadFactory(),
                 ProducerType.MULTI,
-                new BlockingWaitStrategy()
+                new YieldingWaitStrategy()
         );
 
         EventHandlerGroup<MarketDataEvent> group = null;
@@ -51,7 +51,7 @@ public class MarketDataProcessor implements AutoCloseable {
         disruptor.start();
     }
 
-    public void handlePriceEvent(long timestamp, float price, float volume) {
+    public void handlePriceEvent(long timestamp, double price, long volume) {
         log.debug("Received market data event: {} {} {}", timestamp, price, volume);
         long sequence = ringBuffer.next();
         try {

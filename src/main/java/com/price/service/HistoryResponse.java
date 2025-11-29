@@ -17,19 +17,19 @@ public class HistoryResponse {
     @Builder.Default
     private final List<Long> times = new ArrayList<>();
     @Builder.Default
-    private final List<Float> opens = new ArrayList<>();
+    private final List<Double> opens = new ArrayList<>();
     @Builder.Default
-    private final List<Float> highs = new ArrayList<>();
+    private final List<Double> highs = new ArrayList<>();
     @Builder.Default
-    private final List<Float> lows = new ArrayList<>();
+    private final List<Double> lows = new ArrayList<>();
     @Builder.Default
-    private final List<Float> closes = new ArrayList<>();
+    private final List<Double> closes = new ArrayList<>();
     @Builder.Default
-    private final List<Integer> volumes = new ArrayList<>();
+    private final List<Long> volumes = new ArrayList<>();
     private final String errorMessage;
 
-    public static HistoryResponse success(List<Long> times, List<Float> opens, List<Float> highs,
-                                          List<Float> lows, List<Float> closes, List<Integer> volumes) {
+    public static HistoryResponse success(List<Long> times, List<Double> opens, List<Double> highs,
+                                          List<Double> lows, List<Double> closes, List<Long> volumes) {
         return HistoryResponse.builder()
                 .status("ok")
                 .times(times)

@@ -51,7 +51,18 @@ public class NonDriftingTimer implements AutoCloseable {
 
     @Override
     public void close() throws IOException {
-
+        stop();
+        try {
+            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    log.error("Scheduler did not terminate");
+                }
+            }
+        } catch (InterruptedException e) {
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     public void add(MarketDataProcessor mdp) {

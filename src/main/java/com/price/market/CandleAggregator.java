@@ -13,11 +13,11 @@ public class CandleAggregator implements EventHandler<MarketDataEvent> {
 
     // Current candle state
     private long currentCandleStartTime = -1;
-    private float open = 0;
-    private float high = Float.MIN_VALUE;
-    private float low = Float.MAX_VALUE;
-    private float close = 0;
-    private float volume = 0;
+    private double open = 0;
+    private double high = Double.MIN_VALUE;
+    private double low = Double.MAX_VALUE;
+    private double close = 0;
+    private long volume = 0;
     private boolean candleStarted = false;
 
     public CandleAggregator(String instrument, int timeframeMs, CandleProcessor candleProcessor) {
@@ -89,8 +89,8 @@ public class CandleAggregator implements EventHandler<MarketDataEvent> {
 
     private void reset() {
         candleStarted = false;
-        high = Float.MIN_VALUE;
-        low = Float.MAX_VALUE;
+        high = Double.MIN_VALUE;
+        low = Double.MAX_VALUE;
         volume = 0;
     }
 }

@@ -1,7 +1,7 @@
 package com.price.storage;
 
-import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.price.common.Configuration;
@@ -21,7 +21,7 @@ public class CandleProcessor implements AutoCloseable {
                 configuration.getDisruptorBufferSize(),
                 Executors.defaultThreadFactory(),
                 ProducerType.MULTI,
-                new BlockingWaitStrategy()
+                new YieldingWaitStrategy()
         );
 
         // Repository implements the EventHandler interface
@@ -36,7 +36,7 @@ public class CandleProcessor implements AutoCloseable {
     }
 
     public void handleCandleEvent(String instrument, int timeframeMs, long time,
-                                  float open, float high, float low, float close, float volume) {
+                                  double open, double high, double low, double close, long volume) {
         long sequence = ringBuffer.next();
         try {
             CandleEvent event = ringBuffer.get(sequence);

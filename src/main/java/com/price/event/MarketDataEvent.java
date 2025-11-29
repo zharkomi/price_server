@@ -14,8 +14,8 @@ import lombok.experimental.Accessors;
 @Accessors(fluent = true)
 public class MarketDataEvent extends TraceableEvent {
     private long timestamp;
-    private float price;
-    private float volume;
+    private double price;
+    private long volume;
     private Type type;
 
     public enum Type {

@@ -13,6 +13,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONObject;
 
 @Slf4j
 public class HistoryService implements AutoCloseable {
@@ -44,6 +45,7 @@ public class HistoryService implements AutoCloseable {
             try {
                 switch (target) {
                     case "/history" -> handleHistory(request, response);
+                    case "/health" -> handleHealth(response);
                     default -> sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND, "Not found");
                 }
             } catch (Exception e) {
@@ -54,31 +56,29 @@ public class HistoryService implements AutoCloseable {
             baseRequest.setHandled(true);
         }
 
+        private void handleHealth(HttpServletResponse response) throws IOException {
+            JSONObject healthResponse = new JSONObject();
+            healthResponse.put("status", "ok");
+            healthResponse.put("service", "HistoryService");
+            healthResponse.put("timestamp", System.currentTimeMillis());
+            sendJsonResponse(response, HttpServletResponse.SC_OK, healthResponse.toString());
+            log.debug("Health check request handled");
+        }
+
         private void handleHistory(HttpServletRequest request, HttpServletResponse response) throws Exception {
             try {
-                // Get query parameters
-                String symbol = request.getParameter("symbol");
-                String interval = request.getParameter("interval");
-                String fromStr = request.getParameter("from");
-                String toStr = request.getParameter("to");
-
-                if (symbol == null || interval == null || fromStr == null || toStr == null) {
-                    sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
-                            "Missing required parameters: symbol, interval, from, to");
-                    return;
-                }
-
-                // Parse timestamps
-                long fromTimestamp = Long.parseLong(fromStr) * 1000; // Convert seconds to milliseconds
-                long toTimestamp = Long.parseLong(toStr) * 1000;
-
-                // Parse interval to milliseconds
-                int timeframeMs = Util.parseTimeframeToMilliseconds(interval);
+                // Parse and validate request
+                HistoryRequest historyRequest = parseAndValidateRequest(request);
 
                 // Query candles from repository
                 log.info("Querying candles: symbol={}, timeframeMs={}, from={}, to={}",
-                        symbol, timeframeMs, fromTimestamp, toTimestamp);
-                List<CandleEvent> candles = repository.queryCandles(symbol, timeframeMs, fromTimestamp, toTimestamp);
+                        historyRequest.getSymbol(), historyRequest.getTimeframeMs(),
+                        historyRequest.getFromTimestamp(), historyRequest.getToTimestamp());
+                List<CandleEvent> candles = repository.queryCandles(
+                        historyRequest.getSymbol(),
+                        historyRequest.getTimeframeMs(),
+                        historyRequest.getFromTimestamp(),
+                        historyRequest.getToTimestamp());
                 log.info("Query returned {} candles", candles.size());
 
                 // Build response DTO
@@ -88,23 +88,81 @@ public class HistoryService implements AutoCloseable {
                 sendJsonResponse(response, HttpServletResponse.SC_OK, historyResponse.toJson());
 
                 log.info("Handled history request for {} {} from {} to {}, returned {} candles",
-                        symbol, interval, fromTimestamp, toTimestamp, candles.size());
+                        historyRequest.getSymbol(), historyRequest.getInterval(),
+                        historyRequest.getFromTimestamp(), historyRequest.getToTimestamp(), candles.size());
 
-            } catch (NumberFormatException e) {
-                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid timestamp format");
             } catch (IllegalArgumentException e) {
-                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Invalid interval format: " + e.getMessage());
+                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
             }
+        }
+
+        private HistoryRequest parseAndValidateRequest(HttpServletRequest request) {
+            // Get query parameters
+            String symbol = request.getParameter("symbol");
+            String interval = request.getParameter("interval");
+            String fromStr = request.getParameter("from");
+            String toStr = request.getParameter("to");
+
+            // Check required parameters
+            if (symbol == null || interval == null || fromStr == null || toStr == null) {
+                throw new IllegalArgumentException("Missing required parameters: symbol, interval, from, to");
+            }
+
+            // Validate symbol is not empty
+            if (symbol.trim().isEmpty()) {
+                throw new IllegalArgumentException("Symbol cannot be empty");
+            }
+
+            // Validate interval is not empty
+            if (interval.trim().isEmpty()) {
+                throw new IllegalArgumentException("Interval cannot be empty");
+            }
+
+            // Parse and validate timestamps
+            long fromTimestamp;
+            long toTimestamp;
+            try {
+                fromTimestamp = Long.parseLong(fromStr) * 1000; // Convert seconds to milliseconds
+                toTimestamp = Long.parseLong(toStr) * 1000;
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid timestamp format");
+            }
+
+            if (fromTimestamp <= 0) {
+                throw new IllegalArgumentException("From timestamp must be positive");
+            }
+
+            if (toTimestamp <= 0) {
+                throw new IllegalArgumentException("To timestamp must be positive");
+            }
+
+            if (fromTimestamp >= toTimestamp) {
+                throw new IllegalArgumentException("From timestamp must be before to timestamp");
+            }
+
+            // Parse and validate interval
+            int timeframeMs;
+            try {
+                timeframeMs = Util.parseTimeframeToMilliseconds(interval);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid interval format: " + e.getMessage());
+            }
+
+            if (timeframeMs <= 0) {
+                throw new IllegalArgumentException("Invalid interval format");
+            }
+
+            return HistoryRequest.of(symbol, interval, fromTimestamp, toTimestamp, timeframeMs);
         }
     }
 
     private HistoryResponse buildHistoryResponse(List<CandleEvent> candles) {
         List<Long> times = new ArrayList<>();
-        List<Float> opens = new ArrayList<>();
-        List<Float> highs = new ArrayList<>();
-        List<Float> lows = new ArrayList<>();
-        List<Float> closes = new ArrayList<>();
-        List<Integer> volumes = new ArrayList<>();
+        List<Double> opens = new ArrayList<>();
+        List<Double> highs = new ArrayList<>();
+        List<Double> lows = new ArrayList<>();
+        List<Double> closes = new ArrayList<>();
+        List<Long> volumes = new ArrayList<>();
 
         for (CandleEvent candle : candles) {
             times.add(candle.time() / 1000); // Convert milliseconds to seconds
@@ -112,7 +170,7 @@ public class HistoryService implements AutoCloseable {
             highs.add(candle.high());
             lows.add(candle.low());
             closes.add(candle.close());
-            volumes.add((int) candle.volume());
+            volumes.add(candle.volume());
         }
 
         return HistoryResponse.success(times, opens, highs, lows, closes, volumes);

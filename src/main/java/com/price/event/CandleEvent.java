@@ -16,9 +16,9 @@ public class CandleEvent extends TraceableEvent {
     private String instrument;
     private int timeframeMs;
     private long time;
-    private float open;
-    private float high;
-    private float low;
-    private float close;
-    private float volume;
+    private double open;
+    private double high;
+    private double low;
+    private double close;
+    private long volume;
 }

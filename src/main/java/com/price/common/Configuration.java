@@ -96,10 +96,24 @@ public class Configuration {
         }
 
         String[] timeframeSpecs = timeframesProperty.split(INSTRUMENT_DELIMITER);
+        if (timeframeSpecs.length == 0) {
+            throw new IllegalArgumentException("No timeframes specified for instrument " + spec);
+        }
+
         int[] result = new int[timeframeSpecs.length];
 
         for (int i = 0; i < timeframeSpecs.length; i++) {
-            result[i] = Util.parseTimeframeToMilliseconds(timeframeSpecs[i].trim());
+            String timeframeSpec = timeframeSpecs[i].trim();
+            if (timeframeSpec.isEmpty()) {
+                throw new IllegalArgumentException("Empty timeframe specification for instrument " + spec);
+            }
+
+            int timeframe = Util.parseTimeframeToMilliseconds(timeframeSpec);
+            if (timeframe <= 0) {
+                throw new IllegalArgumentException("Invalid timeframe: " + timeframeSpec +
+                        " for instrument " + spec + ". Timeframe must be positive.");
+            }
+            result[i] = timeframe;
         }
 
         return result;
