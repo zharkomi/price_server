@@ -43,6 +43,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testImplementation 'org.mockito:mockito-core:5.8.0'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.8.0'
+    testImplementation 'org.eclipse.jetty:jetty-client:11.0.24'
 }
 
 test {
@@ -51,4 +52,24 @@ test {
 
 application {
     mainClass = 'com.price.Server'
+}
+
+jar {
+    enabled = false
+    manifest {
+        attributes('Main-Class': application.mainClass)
+    }
+}
+
+tasks.register('fatJar', Jar) {
+    archiveClassifier = 'all'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes('Main-Class': application.mainClass)
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
 }

@@ -17,10 +17,12 @@ public class Configuration {
     private static final String ENV_CLICKHOUSE_URL = "ps.clickhouse.url";
     private static final String ENV_CLICKHOUSE_USER = "ps.clickhouse.user";
     private static final String ENV_CLICKHOUSE_PASSWORD = "ps.clickhouse.password";
+    private static final String ENV_HTTP_PORT = "ps.http.port";
     private static final String INSTRUMENT_DELIMITER = ",";
     private static final String INSTRUMENT_SEPARATOR = "@";
     public static final String DEFAULT_BUFFER_SIZE = "4096";
     public static final String DEFAULT_REPOSITORY_TYPE = "CLICKHOUSE";
+    public static final String DEFAULT_HTTP_PORT = "8080";
 
     public final List<Instrument> instruments;
     public final List<Source> sources;
@@ -28,6 +30,7 @@ public class Configuration {
     public final String clickhouseUrl;
     public final String clickhouseUser;
     public final String clickhousePassword;
+    public final int httpPort;
 
     public Configuration() {
         this.instruments = parseInstruments();
@@ -36,6 +39,7 @@ public class Configuration {
         this.clickhouseUrl = System.getenv(ENV_CLICKHOUSE_URL);
         this.clickhouseUser = System.getenv(ENV_CLICKHOUSE_USER);
         this.clickhousePassword = System.getenv(ENV_CLICKHOUSE_PASSWORD);
+        this.httpPort = Integer.parseInt(System.getenv().getOrDefault(ENV_HTTP_PORT, DEFAULT_HTTP_PORT));
     }
 
     private List<Instrument> parseInstruments() {

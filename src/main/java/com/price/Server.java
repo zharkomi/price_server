@@ -48,7 +48,7 @@ public class Server {
 
         connectorFactory.start();
 
-        HistoryService historyService = new HistoryService(repository);
+        HistoryService historyService = new HistoryService(repository, configuration);
         historyService.start();
         services.add(historyService);
 

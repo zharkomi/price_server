@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  price-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${IMAGE_NAME:-market-price-server}:${IMAGE_TAG:-latest}
+    container_name: ${CONTAINER_NAME:-price-server}
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+    volumes:
+      - ./run/logs:/app/logs
+    environment:
+      - ps.instruments=${PS_INSTRUMENTS}
+      - ps.timeframe.BTCUSDT@BINANCE=${PS_TIMEFRAME_BTCUSDT}
+      - ps.timeframe.ETHUSDT@BINANCE=${PS_TIMEFRAME_ETHUSDT}
+      - ps.buffer.size=${PS_BUFFER_SIZE:-4096}
+      - ps.clickhouse.url=${PS_CLICKHOUSE_URL}
+      - ps.clickhouse.user=${PS_CLICKHOUSE_USER:-default}
+      - ps.clickhouse.password=${PS_CLICKHOUSE_PASSWORD:-}
+    restart: unless-stopped
+    networks:
+      - price-network
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-latest}
+    container_name: ${CLICKHOUSE_CONTAINER_NAME:-price-clickhouse}
+    ports:
+      - "${CLICKHOUSE_HTTP_PORT:-8120}:8123"
+      - "${CLICKHOUSE_NATIVE_PORT:-9001}:9000"
+    environment:
+      - CLICKHOUSE_USER=${PS_CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${PS_CLICKHOUSE_PASSWORD:-}
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - ./run/clickhouse:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+    restart: unless-stopped
+    networks:
+      - price-network
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  price-network:
+    driver: bridge
+
+volumes:
+  clickhouse-logs:

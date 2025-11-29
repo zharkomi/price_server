@@ -29,3 +29,6 @@ build
 hs_err_pid*
 replay_pid*
 /code_review_report.md
+/review.md
+GEMINI.md
+run

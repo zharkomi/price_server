@@ -1,5 +1,6 @@
 package com.price.service;
 
+import com.price.common.Configuration;
 import com.price.common.Util;
 import com.price.event.CandleEvent;
 import com.price.storage.Repository;
@@ -18,20 +19,21 @@ import org.json.JSONObject;
 @Slf4j
 public class HistoryService implements AutoCloseable {
     private final Repository repository;
+    private final Configuration configuration;
     private final Server server;
-    private static final int DEFAULT_PORT = 8080;
 
-    public HistoryService(Repository repository) {
+    public HistoryService(Repository repository, Configuration configuration) {
         this.repository = repository;
-        this.server = new Server(DEFAULT_PORT);
+        this.configuration = configuration;
+        this.server = new Server(configuration.httpPort);
         this.server.setHandler(new HistoryHandler());
-        log.info("Jetty server created on port {}", DEFAULT_PORT);
+        log.info("Jetty server created on port {}", configuration.httpPort);
     }
 
     public void start() {
         try {
             server.start();
-            log.info("HistoryService HTTP server started on port {}", DEFAULT_PORT);
+            log.info("HistoryService HTTP server started on port {}", configuration.httpPort);
         } catch (Exception e) {
             throw new RuntimeException("Failed to start Jetty server", e);
         }
