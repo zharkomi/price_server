@@ -23,7 +23,7 @@
 build
 .idea/
 .gradle
-.claude/commands/spec-review.md
+.claude/commands/spec_review.md
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
