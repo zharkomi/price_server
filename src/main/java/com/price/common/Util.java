@@ -1,9 +1,7 @@
 package com.price.common;
 
-import com.price.market.source.Source;
-
 public class Util {
-    public static int parseTimeframeToSeconds(String timeframe) {
+    public static int parseTimeframeToMilliseconds(String timeframe) {
         if (timeframe.isEmpty()) {
             throw new IllegalArgumentException("Empty time value");
         }

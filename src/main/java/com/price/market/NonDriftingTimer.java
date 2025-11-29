@@ -2,8 +2,8 @@ package com.price.market;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.Closeable;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -23,25 +23,24 @@ public class NonDriftingTimer implements AutoCloseable {
 
     private void scheduleNextEvent() {
         if (!running) return;
+        Instant now = Instant.now();
 
-        // Precalculate next second boundary timestamp
-        long currentMillis = System.currentTimeMillis();
-        long nextSecond = ((currentMillis / 1000) + 1) * 1000;
-        long delay = nextSecond - currentMillis;
+        // Precalculate next second boundary timestamp in millis
+        long nextSecond = ((now.toEpochMilli() / 1000) + 1) * 1000;
+
+        // Calculate delay in nanos for precise scheduling
+        long delayNanos = 1_000_000_000L - now.getNano();
 
         scheduler.schedule(() -> {
-            // Send precalculated timestamp (not current time)
             handleEvent(nextSecond);
-
-            // Calculate and schedule next event (prevents drift)
             scheduleNextEvent();
-        }, delay, TimeUnit.MILLISECONDS);
+        }, delayNanos, TimeUnit.NANOSECONDS);
     }
 
     private void handleEvent(long timestamp) {
         log.debug("Timer event at {}", timestamp);
         for (MarketDataProcessor processor : processors) {
-            processor.onTimerEvent(timestamp);
+            processor.handleTimerEvent(timestamp);
         }
     }
 

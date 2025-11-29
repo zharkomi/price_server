@@ -19,7 +19,17 @@ dependencies {
     implementation 'io.github.binance:binance-connector-java:3.4.1'
     implementation 'com.lmax:disruptor:4.0.0'
     implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation 'commons-io:commons-io:2.18.0'
     implementation 'org.json:json:20231013'
+
+    // ClickHouse
+    implementation 'com.clickhouse:clickhouse-jdbc:0.6.5'
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
+    implementation 'org.lz4:lz4-java:1.8.0'
+
+    // Jetty
+    implementation 'org.eclipse.jetty:jetty-server:11.0.24'
+    implementation 'org.eclipse.jetty:jetty-servlet:11.0.24'
 
     // Logging
     implementation 'org.apache.logging.log4j:log4j-api:2.24.3'

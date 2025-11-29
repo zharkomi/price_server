@@ -13,16 +13,29 @@ public class Configuration {
     public static final String ENV_BUFFER_SIZE = "ps.buffer.size";
     private static final String ENV_INSTRUMENTS = "ps.instruments";
     private static final String ENV_TIMEFRAME_PREFIX = "ps.timeframe.";
+    private static final String ENV_REPOSITORY_TYPE = "ps.repository.type";
+    private static final String ENV_CLICKHOUSE_URL = "ps.clickhouse.url";
+    private static final String ENV_CLICKHOUSE_USER = "ps.clickhouse.user";
+    private static final String ENV_CLICKHOUSE_PASSWORD = "ps.clickhouse.password";
     private static final String INSTRUMENT_DELIMITER = ",";
     private static final String INSTRUMENT_SEPARATOR = "@";
-    public static final int DEFAULT_BUFFER_SIZE = 4096;
+    public static final String DEFAULT_BUFFER_SIZE = "4096";
+    public static final String DEFAULT_REPOSITORY_TYPE = "CLICKHOUSE";
 
     public final List<Instrument> instruments;
     public final List<Source> sources;
+    public final String repositoryType;
+    public final String clickhouseUrl;
+    public final String clickhouseUser;
+    public final String clickhousePassword;
 
     public Configuration() {
         this.instruments = parseInstruments();
         this.sources = instruments.stream().map(Instrument::source).distinct().toList();
+        this.repositoryType = System.getenv().getOrDefault(ENV_REPOSITORY_TYPE, DEFAULT_REPOSITORY_TYPE).toUpperCase();
+        this.clickhouseUrl = System.getenv(ENV_CLICKHOUSE_URL);
+        this.clickhouseUser = System.getenv(ENV_CLICKHOUSE_USER);
+        this.clickhousePassword = System.getenv(ENV_CLICKHOUSE_PASSWORD);
     }
 
     private List<Instrument> parseInstruments() {
@@ -86,16 +99,13 @@ public class Configuration {
         int[] result = new int[timeframeSpecs.length];
 
         for (int i = 0; i < timeframeSpecs.length; i++) {
-            result[i] = Util.parseTimeframeToSeconds(timeframeSpecs[i].trim());
+            result[i] = Util.parseTimeframeToMilliseconds(timeframeSpecs[i].trim());
         }
 
         return result;
     }
 
-
     public int getDisruptorBufferSize() {
-        String bufferSizeProperty = System.getenv(ENV_BUFFER_SIZE);
-        int bufferSize = NumberUtils.toInt(bufferSizeProperty, DEFAULT_BUFFER_SIZE);
-        return bufferSize > 0 ? bufferSize : DEFAULT_BUFFER_SIZE;
+        return NumberUtils.toInt(System.getenv().getOrDefault(ENV_BUFFER_SIZE, DEFAULT_BUFFER_SIZE));
     }
 }

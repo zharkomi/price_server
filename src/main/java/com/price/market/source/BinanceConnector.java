@@ -4,17 +4,14 @@ import com.binance.connector.client.WebSocketStreamClient;
 import com.binance.connector.client.impl.WebSocketStreamClientImpl;
 import com.price.market.Connector;
 import com.price.market.Instrument;
-import com.price.market.MarketDataEvent;
 import com.price.market.MarketDataProcessor;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class BinanceConnector implements Connector {
     private static final Logger logger = LoggerFactory.getLogger(BinanceConnector.class);
@@ -77,20 +74,25 @@ public class BinanceConnector implements Connector {
             String symbol = data.getString("s");
             String bidPriceStr = data.getString("b");
             String askPriceStr = data.getString("a");
+            String bidQtyStr = data.getString("B");
+            String askQtyStr = data.getString("A");
 
             float bidPrice = Float.parseFloat(bidPriceStr);
             float askPrice = Float.parseFloat(askPriceStr);
-            float midPrice = (bidPrice + askPrice) / 2.0f;
+            float bidQty = Float.parseFloat(bidQtyStr);
+            float askQty = Float.parseFloat(askQtyStr);
 
+            float midPrice = (bidPrice + askPrice) / 2.0f;
+            float volume = bidQty + askQty;
+
+            // bookTicker doesn't include event time field, use system time
             long timestamp = System.currentTimeMillis();
 
             MarketDataProcessor processor = processorsBySymbol.get(symbol);
             if (processor != null) {
-                MarketDataEvent event = new MarketDataEvent(timestamp, midPrice, 0.0f);
-                processor.handleEvent(event);
-
-                logger.debug("Processed book ticker for {}: bid={}, ask={}, mid={}",
-                    symbol, bidPrice, askPrice, midPrice);
+                processor.handlePriceEvent(timestamp, midPrice, volume);
+                logger.debug("Processed book ticker for {}: bid={}, ask={}, mid={}, volume={}, eventTime={}",
+                    symbol, bidPrice, askPrice, midPrice, volume, timestamp);
             } else {
                 logger.warn("No processor found for symbol: {}", symbol);
             }

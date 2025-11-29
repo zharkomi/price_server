@@ -5,10 +5,12 @@ import com.price.market.Instrument;
 import com.price.market.MarketDataProcessor;
 import com.price.market.NonDriftingTimer;
 import com.price.market.source.ConnectorFactory;
+import com.price.service.HistoryService;
 import com.price.storage.CandleProcessor;
+import com.price.storage.Repository;
+import com.price.storage.db.RepositoryFactory;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -28,7 +30,12 @@ public class Server {
         ConnectorFactory connectorFactory = new ConnectorFactory(configuration.sources);
         services.add(connectorFactory);
 
-        CandleProcessor candleProcessor = new CandleProcessor();
+        RepositoryFactory repositoryFactory = new RepositoryFactory(configuration);
+        services.add(repositoryFactory);
+        Repository repository = repositoryFactory.getRepository();
+
+        CandleProcessor candleProcessor = new CandleProcessor(repository, configuration);
+        candleProcessor.start();
         services.add(candleProcessor);
 
         for (Instrument instrument : configuration.instruments) {
@@ -40,6 +47,10 @@ public class Server {
         }
 
         connectorFactory.start();
+
+        HistoryService historyService = new HistoryService(repository);
+        historyService.start();
+        services.add(historyService);
 
         addShutdownHook(services);
         log.info("Server started successfully.");

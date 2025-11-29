@@ -48,6 +48,13 @@ All configuration is done through environment variables:
   - Must be a power of 2 (e.g., 1024, 2048, 4096, 8192)
   - Larger buffers can handle higher throughput but use more memory
 
+- **`ps.clickhouse.url`** - ClickHouse JDBC URL (default: `jdbc:clickhouse://localhost:8123`)
+  - Format: `jdbc:clickhouse://<host>:<port>`
+
+- **`ps.clickhouse.user`** - ClickHouse username (default: `default`)
+
+- **`ps.clickhouse.password`** - ClickHouse password (default: empty string)
+
 ### Configuration Example
 
 ```bash
@@ -73,7 +80,7 @@ export ps.buffer.size=8192
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/zharkomi/price_server.git
    cd price_server
    ```
 
@@ -130,9 +137,6 @@ Press `Ctrl+C` to gracefully shutdown the server. The shutdown hook will:
 
 # Run tests (when available)
 ./gradlew test
-
-# View all available tasks
-./gradlew tasks
 ```
 
 ### Log Configuration
@@ -161,7 +165,3 @@ src/main/java/com/price/
 └── event/
     └── MarketDataEvent.java      # Event types (DATA, TIMER)
 ```
-
-## Contributing
-
-For detailed architecture and development guidelines, see `CLAUDE.md`.

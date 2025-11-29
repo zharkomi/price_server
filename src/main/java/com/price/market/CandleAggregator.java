@@ -1,13 +1,14 @@
 package com.price.market;
 
 import com.lmax.disruptor.EventHandler;
-import com.price.storage.CandleEvent;
+import com.price.event.MarketDataEvent;
 import com.price.storage.CandleProcessor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CandleAggregator implements EventHandler<MarketDataEvent> {
-    private final long timeframeMillis;
+    private final String instrument;
+    private final int timeframeMs;
     private final CandleProcessor candleProcessor;
 
     // Current candle state
@@ -19,8 +20,9 @@ public class CandleAggregator implements EventHandler<MarketDataEvent> {
     private float volume = 0;
     private boolean candleStarted = false;
 
-    public CandleAggregator(long timeframeMillis, CandleProcessor candleProcessor) {
-        this.timeframeMillis = timeframeMillis;
+    public CandleAggregator(String instrument, int timeframeMs, CandleProcessor candleProcessor) {
+        this.instrument = instrument;
+        this.timeframeMs = timeframeMs;
         this.candleProcessor = candleProcessor;
     }
 
@@ -36,7 +38,7 @@ public class CandleAggregator implements EventHandler<MarketDataEvent> {
     private void processTimerEvent(MarketDataEvent event) {
         if (candleStarted) {
             long eventTime = event.timestamp();
-            long candleStartTime = (eventTime / timeframeMillis) * timeframeMillis;
+            long candleStartTime = (eventTime / timeframeMs) * timeframeMs;
             if (candleStartTime != currentCandleStartTime) {
                 flushCandle();
             }
@@ -46,7 +48,7 @@ public class CandleAggregator implements EventHandler<MarketDataEvent> {
     private void processMarketDataEvent(MarketDataEvent event) {
         // Calculate which candle period this event belongs to
         long eventTime = event.timestamp();
-        long candleStartTime = (eventTime / timeframeMillis) * timeframeMillis;
+        long candleStartTime = (eventTime / timeframeMs) * timeframeMs;
 
         // If this is a new candle period, flush the previous one
         if (candleStarted && candleStartTime != currentCandleStartTime) {
@@ -76,11 +78,11 @@ public class CandleAggregator implements EventHandler<MarketDataEvent> {
             return;
         }
 
-        CandleEvent candleEvent = new CandleEvent(currentCandleStartTime, open, high, low, close, volume);
-        candleProcessor.handleEvent(candleEvent);
+        candleProcessor.handleCandleEvent(instrument, timeframeMs, currentCandleStartTime,
+                open, high, low, close, volume);
 
-        log.debug("Flushed candle: timeframeMillis={}, O={}, H={}, L={}, C={}, V={}",
-                timeframeMillis, open, high, low, close, volume);
+        log.debug("Flushed candle: instrument={}, timeframeMs={}, O={}, H={}, L={}, C={}, V={}",
+                instrument, timeframeMs, open, high, low, close, volume);
 
         reset();
     }

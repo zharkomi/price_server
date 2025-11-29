@@ -25,6 +25,8 @@ public class ConnectorFactory implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-
+        for (Connector connector : connectors.values()) {
+            connector.close();
+        }
     }
 }

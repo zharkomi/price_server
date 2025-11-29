@@ -6,10 +6,10 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.price.common.Configuration;
+import com.price.event.MarketDataEvent;
 import com.price.storage.CandleProcessor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 
@@ -33,7 +33,11 @@ public class MarketDataProcessor implements AutoCloseable {
         EventHandlerGroup<MarketDataEvent> group = null;
 
         for (int timeframe : instrument.timeframes()) {
-            CandleAggregator aggregator = new CandleAggregator(timeframe, candleProcessor);
+            CandleAggregator aggregator = new CandleAggregator(
+                    instrument.fullName(),
+                    timeframe,
+                    candleProcessor
+            );
             if (group == null) {
                 group = disruptor.handleEventsWith(aggregator);
             } else {
@@ -43,23 +47,25 @@ public class MarketDataProcessor implements AutoCloseable {
         this.ringBuffer = disruptor.getRingBuffer();
     }
 
-    public void start(){
+    public void start() {
         disruptor.start();
     }
 
-    public void handleEvent(MarketDataEvent marketData) {
-        log.debug("Received market data event: {}", marketData);
+    public void handlePriceEvent(long timestamp, float price, float volume) {
+        log.debug("Received market data event: {} {} {}", timestamp, price, volume);
         long sequence = ringBuffer.next();
         try {
             MarketDataEvent event = ringBuffer.get(sequence);
             event.type(MarketDataEvent.Type.DATA);
-            event.copyFrom(marketData);
+            event.timestamp(timestamp);
+            event.price(price);
+            event.volume(volume);
         } finally {
             ringBuffer.publish(sequence);
         }
     }
 
-    public void onTimerEvent(long timestamp) {
+    public void handleTimerEvent(long timestamp) {
         long sequence = ringBuffer.next();
         try {
             MarketDataEvent event = ringBuffer.get(sequence);

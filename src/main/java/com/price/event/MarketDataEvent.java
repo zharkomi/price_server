@@ -1,0 +1,25 @@
+package com.price.event;
+
+import com.price.common.TraceableEvent;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.Accessors;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@ToString
+@Accessors(fluent = true)
+public class MarketDataEvent extends TraceableEvent {
+    private long timestamp;
+    private float price;
+    private float volume;
+    private Type type;
+
+    public enum Type {
+        DATA,
+        TIMER
+    }
+}
