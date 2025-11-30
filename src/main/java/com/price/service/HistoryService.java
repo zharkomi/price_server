@@ -3,6 +3,10 @@ package com.price.service;
 import com.price.common.Configuration;
 import com.price.common.Util;
 import com.price.event.CandleEvent;
+import com.price.service.dto.HealthResponse;
+import com.price.service.dto.HistoryRequest;
+import com.price.service.dto.HistoryResponse;
+import com.price.service.dto.InstrumentInfo;
 import com.price.storage.Repository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,7 +18,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.json.JSONObject;
 
 @Slf4j
 public class HistoryService implements AutoCloseable {
@@ -59,11 +62,18 @@ public class HistoryService implements AutoCloseable {
         }
 
         private void handleHealth(HttpServletResponse response) throws IOException {
-            JSONObject healthResponse = new JSONObject();
-            healthResponse.put("status", "ok");
-            healthResponse.put("service", "HistoryService");
-            healthResponse.put("timestamp", System.currentTimeMillis());
-            sendJsonResponse(response, HttpServletResponse.SC_OK, healthResponse.toString());
+            List<InstrumentInfo> instrumentInfos = configuration.instruments.stream()
+                    .map(InstrumentInfo::from)
+                    .toList();
+
+            HealthResponse healthResponse = HealthResponse.builder()
+                    .status("ok")
+                    .service("HistoryService")
+                    .timestamp(System.currentTimeMillis())
+                    .instruments(instrumentInfos)
+                    .build();
+
+            sendJsonResponse(response, HttpServletResponse.SC_OK, healthResponse.toJson());
             log.debug("Health check request handled");
         }
 

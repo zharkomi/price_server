@@ -1,4 +1,4 @@
-package com.price.service;
+package com.price.service.dto;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

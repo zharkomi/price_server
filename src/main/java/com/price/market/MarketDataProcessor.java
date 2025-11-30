@@ -34,7 +34,7 @@ public class MarketDataProcessor implements AutoCloseable {
 
         for (int timeframe : instrument.timeframes()) {
             CandleAggregator aggregator = new CandleAggregator(
-                    instrument.fullName(),
+                    instrument,
                     timeframe,
                     candleProcessor
             );
@@ -52,6 +52,7 @@ public class MarketDataProcessor implements AutoCloseable {
     }
 
     public void handlePriceEvent(long timestamp, double price, long volume) {
+        this.instrument.marketEvents().accumulate(1);
         log.debug("Received market data event: {} {} {}", timestamp, price, volume);
         long sequence = ringBuffer.next();
         try {

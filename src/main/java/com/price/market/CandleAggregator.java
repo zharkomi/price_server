@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CandleAggregator implements EventHandler<MarketDataEvent> {
-    private final String instrument;
+    private final Instrument instrument;
     private final int timeframeMs;
     private final CandleProcessor candleProcessor;
 
@@ -20,7 +20,7 @@ public class CandleAggregator implements EventHandler<MarketDataEvent> {
     private long volume = 0;
     private boolean candleStarted = false;
 
-    public CandleAggregator(String instrument, int timeframeMs, CandleProcessor candleProcessor) {
+    public CandleAggregator(Instrument instrument, int timeframeMs, CandleProcessor candleProcessor) {
         this.instrument = instrument;
         this.timeframeMs = timeframeMs;
         this.candleProcessor = candleProcessor;
@@ -78,7 +78,8 @@ public class CandleAggregator implements EventHandler<MarketDataEvent> {
             return;
         }
 
-        candleProcessor.handleCandleEvent(instrument, timeframeMs, currentCandleStartTime,
+        this.instrument.candlesEvents().accumulate(1);
+        candleProcessor.handleCandleEvent(instrument.fullName(), timeframeMs, currentCandleStartTime,
                 open, high, low, close, volume);
 
         log.debug("Flushed candle: instrument={}, timeframeMs={}, O={}, H={}, L={}, C={}, V={}",

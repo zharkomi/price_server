@@ -381,7 +381,7 @@ curl "http://localhost:8080/history?symbol=BTCUSDT@BINANCE&interval=1m&from=1735
 
 #### GET /health
 
-Health check endpoint for service monitoring.
+Health check endpoint for service monitoring. Returns detailed information about all configured instruments including their configuration and runtime statistics.
 
 **Example Request:**
 ```bash
@@ -393,9 +393,39 @@ curl "http://localhost:8080/health"
 {
   "status": "ok",
   "service": "HistoryService",
-  "timestamp": 1735516800000
+  "timestamp": 1735516800000,
+  "instruments": [
+    {
+      "name": "BTCUSDT",
+      "source": "BINANCE",
+      "fullName": "BTCUSDT@BINANCE",
+      "timeframes": [60000, 300000, 900000],
+      "marketEvents": 125847,
+      "candleEvents": 384
+    },
+    {
+      "name": "ETHUSDT",
+      "source": "BINANCE",
+      "fullName": "ETHUSDT@BINANCE",
+      "timeframes": [60000, 300000],
+      "marketEvents": 98234,
+      "candleEvents": 256
+    }
+  ]
 }
 ```
+
+**Response Fields:**
+- `status` - Service status ("ok")
+- `service` - Service name ("HistoryService")
+- `timestamp` - Current timestamp in milliseconds (Unix epoch)
+- `instruments` - Array of configured instruments with:
+  - `name` - Instrument symbol (e.g., "BTCUSDT")
+  - `source` - Exchange name (e.g., "BINANCE")
+  - `fullName` - Full instrument identifier (e.g., "BTCUSDT@BINANCE")
+  - `timeframes` - Array of configured timeframes in milliseconds
+  - `marketEvents` - Total number of market data events processed
+  - `candleEvents` - Total number of candles generated
 
 ### API Features
 

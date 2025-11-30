@@ -156,10 +156,11 @@ public class ClickHouseRepository implements Repository, EventHandler<CandleEven
                     candle.close(rs.getDouble("close"));
                     candle.volume(rs.getLong("volume"));
                     candles.add(candle);
-                    log.info("Retrieved candle: time={}, open={}, high={}, low={}, close={}, volume={}",
+                    log.debug("Retrieved candle: time={}, open={}, high={}, low={}, close={}, volume={}",
                             candle.time(), candle.open(), candle.high(), candle.low(), candle.close(), candle.volume());
                 }
             }
+            log.info("Query executed successfully, retrieved {} candles", candles.size());
         } catch (SQLException e) {
             log.error("Failed to query candles", e);
             throw e;
