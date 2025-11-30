@@ -31,8 +31,19 @@ WORKDIR /app
 # Copy built fat JAR from builder stage
 COPY --from=builder /app/build/libs/*-all.jar app.jar
 
+# Create log directory structure
+RUN mkdir -p /app/logs/gc
+
 # Expose HTTP API port
 EXPOSE 8080
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the application with optimized JVM parameters
+ENTRYPOINT ["java", \
+    "-Xms500m", \
+    "-Xmx1g", \
+    "-XX:+UseContainerSupport", \
+    "-XX:MaxRAMPercentage=75.0", \
+    "-XX:+HeapDumpOnOutOfMemoryError", \
+    "-XX:HeapDumpPath=/app/logs/heap_dump.hprof", \
+    "-Xlog:gc*:file=/app/logs/gc/gc.log:time,uptime,level,tags:filecount=5,filesize=10M", \
+    "-jar", "app.jar"]

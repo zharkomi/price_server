@@ -1,6 +1,24 @@
-# Market Price Server 
+# Market Price Server
 
 A high-performance Java 21 market data aggregation server that collects real-time cryptocurrency price data from exchanges and aggregates it into OHLCV (Open, High, Low, Close, Volume) candles at configurable timeframes.
+
+## Table of Contents
+
+- [Description](#description)
+- [Architecture](#architecture)
+- [Configuration](#configuration)
+- [Storage Layer](#storage-layer)
+- [How to Start](#how-to-start)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start with Docker](#quick-start-with-docker)
+  - [Docker Management Scripts](#docker-management-scripts)
+  - [Docker Architecture](#docker-architecture)
+- [REST API](#rest-api)
+- [Visualization Tools](#visualization-tools)
+- [Development](#development)
+  - [Local Development Build and Run](#local-development-build-and-run)
+  - [Build Tasks](#build-tasks)
+  - [Log Configuration](#log-configuration)
 
 ## Description
 
@@ -144,6 +162,174 @@ To add a new repository:
 3. Update `RepositoryFactory` to support the new type
 4. Add configuration variables for the new backend
 
+## How to Start
+
+### Prerequisites
+
+**For Docker deployment (recommended):**
+- Docker and Docker Compose
+- Internet connection (for WebSocket connection to exchanges)
+
+**For local development:**
+- ClickHouse database (for persistent storage of candle data)
+  - Installation: https://clickhouse.com/docs/en/install
+  - Or run via Docker: `docker run -d -p 8123:8123 clickhouse/clickhouse-server`
+- Internet connection (for WebSocket connection to exchanges)
+
+### Quick Start with Docker
+
+The easiest way to run the server is using Docker Compose, which automatically sets up both the price server and ClickHouse database.
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/zharkomi/price_server.git
+   cd price_server
+   ```
+
+2. **Build the Docker image**
+   ```bash
+   ./scripts/docker_build.sh
+   ```
+
+   This uses a multi-stage Dockerfile to create an optimized production image:
+   - Stage 1: Downloads Gradle dependencies (cached layer)
+   - Stage 2: Builds fat JAR with all dependencies
+   - Stage 3: Runtime image with JRE only (~300MB vs 1GB+ for full JDK)
+
+3. **Start the services**
+   ```bash
+   ./scripts/compose_run.sh up
+   ```
+
+   This will:
+   - Start ClickHouse database
+   - Wait for ClickHouse to be healthy
+   - Start the price server using the built image
+   - Display service URLs and helpful commands
+
+4. **Verify the services are running**
+   ```bash
+   # Check service status
+   ./scripts/compose_run.sh ps
+
+   # View logs
+   ./scripts/compose_run.sh logs
+
+   # Test the API
+   curl "http://localhost:8080/health"
+   ```
+
+5. **Shutdown**
+   ```bash
+   # Stop services
+   ./scripts/compose_run.sh down
+   ```
+
+   The shutdown process will:
+   - Gracefully stop the price server
+   - Close all WebSocket connections
+   - Flush remaining candles
+   - Stop all processors and timers
+   - Stop ClickHouse database
+
+### Docker Management Scripts
+
+The repository includes helper scripts for Docker operations:
+
+#### `scripts/docker_build.sh` - Standalone Image Build
+
+For building the price server Docker image independently:
+
+```bash
+# Build with default 'latest' tag
+./scripts/docker_build.sh
+
+# Build with custom tag
+./scripts/docker_build.sh v1.0.0
+```
+
+This script uses the multi-stage Dockerfile to create an optimized production image.
+
+#### `scripts/compose_run.sh` - Docker Compose Management
+
+Main script for managing the entire application stack (price server + ClickHouse):
+
+```bash
+# Start services (builds if needed)
+./scripts/compose_run.sh up
+
+# Stop services
+./scripts/compose_run.sh down
+
+# Restart services
+./scripts/compose_run.sh restart
+
+# View logs (follow mode)
+./scripts/compose_run.sh logs
+
+# Show running services
+./scripts/compose_run.sh ps
+
+# Rebuild images
+./scripts/compose_run.sh build
+
+# Stop and remove everything including volumes
+./scripts/compose_run.sh clean
+```
+
+**Features:**
+- Automatically checks for `.env` file existence
+- Displays service URLs after startup
+- Provides helpful command reminders
+- Supports all common Docker Compose operations
+
+### Docker Architecture
+
+The Docker setup uses a **multi-stage build** for optimal image size and security:
+
+**Stage 1: Dependencies** (`eclipse-temurin:21-jdk-jammy`)
+- Downloads Gradle dependencies
+- Cached layer for faster rebuilds
+
+**Stage 2: Builder** (extends dependencies stage)
+- Copies source code
+- Builds fat JAR with all dependencies
+
+**Stage 3: Runtime** (`eclipse-temurin:21-jre-jammy`)
+- JRE-only base image (smaller, more secure)
+- Copies only the built JAR
+- Exposes port 8080
+- Final image size: ~300MB (vs 1GB+ for full JDK)
+
+**Docker Compose Services:**
+
+1. **price-server**
+   - Built from local Dockerfile
+   - Exposes configurable HTTP port (default: 8080)
+   - Mounts `./run/logs` for log persistence
+   - Auto-restarts unless stopped manually
+   - Waits for ClickHouse to be healthy before starting
+
+2. **clickhouse**
+   - Official ClickHouse image
+   - Exposes HTTP (8120) and native (9001) ports
+   - Persists data in `./run/clickhouse` volume
+   - Health check ensures database is ready
+   - Separate volume for logs
+
+**Networking:**
+- Services communicate via `price-network` bridge network
+- Price server connects to ClickHouse using hostname `clickhouse`
+- External access via mapped ports on localhost
+
+**Data Persistence:**
+- `./run/logs` - Price server application logs and GC logs
+  - Application logs (INFO level with rolling file appender)
+  - GC logs in `gc/` subdirectory (5 files × 10MB rotation)
+  - Heap dumps on OutOfMemoryError
+- `./run/clickhouse` - ClickHouse database files
+- `clickhouse-logs` - ClickHouse server logs (Docker volume)
+
 ## REST API
 
 The server exposes a REST API for querying historical candle data via the `HistoryService` component.
@@ -233,196 +419,69 @@ export ps.timeframe.ETHUSDT@BINANCE="1m,5m,1h"
 export ps.buffer.size=8192
 ```
 
-## How to Start
+## Visualization Tools
 
-### Prerequisites
+### History Plotter Script
 
-**For Docker deployment (recommended):**
-- Docker and Docker Compose
-- Internet connection (for WebSocket connection to exchanges)
-
-**For local development:**
-- Java 21 or higher
-- ClickHouse database (for persistent storage of candle data)
-  - Installation: https://clickhouse.com/docs/en/install
-  - Or run via Docker: `docker run -d -p 8123:8123 clickhouse/clickhouse-server`
-- Internet connection (for WebSocket connection to exchanges)
-
-### Quick Start with Docker (Recommended)
-
-The easiest way to run the server is using Docker Compose, which automatically sets up both the price server and ClickHouse database.
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/zharkomi/price_server.git
-   cd price_server
-   ```
-
-2. **Configure environment variables**
-
-   Create or edit the `.env` file in the project root:
-   ```bash
-   # Docker Image Configuration
-   IMAGE_NAME=market-price-server
-   IMAGE_TAG=latest
-
-   # Container Configuration
-   CONTAINER_NAME=price-server
-   HTTP_PORT=8080
-
-   # ClickHouse Container Configuration
-   CLICKHOUSE_CONTAINER_NAME=price-clickhouse
-   CLICKHOUSE_VERSION=latest
-   CLICKHOUSE_HTTP_PORT=8120
-   CLICKHOUSE_NATIVE_PORT=9001
-
-   # Price Server Configuration
-   PS_INSTRUMENTS=BTCUSDT@BINANCE,ETHUSDT@BINANCE
-   PS_TIMEFRAME_BTCUSDT=5s,5m,15m
-   PS_TIMEFRAME_ETHUSDT=10s,5m
-   PS_BUFFER_SIZE=4096
-
-   # ClickHouse Connection Configuration
-   PS_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123
-   PS_CLICKHOUSE_USER=default
-   PS_CLICKHOUSE_PASSWORD=
-   ```
-
-3. **Start the services**
-   ```bash
-   ./scripts/compose_run.sh up
-   ```
-
-   This will:
-   - Build the Docker image using multi-stage builds
-   - Start ClickHouse database
-   - Wait for ClickHouse to be healthy
-   - Start the price server
-   - Display service URLs and helpful commands
-
-4. **Verify the services are running**
-   ```bash
-   # Check service status
-   ./scripts/compose_run.sh ps
-
-   # View logs
-   ./scripts/compose_run.sh logs
-
-   # Test the API
-   curl "http://localhost:8080/health"
-   ```
-
-### Docker Management Scripts
-
-The repository includes helper scripts for Docker operations:
-
-#### `scripts/compose_run.sh` - Docker Compose Management
-
-Main script for managing the entire application stack (price server + ClickHouse):
-
-```bash
-# Start services (builds if needed)
-./scripts/compose_run.sh up
-
-# Stop services
-./scripts/compose_run.sh down
-
-# Restart services
-./scripts/compose_run.sh restart
-
-# View logs (follow mode)
-./scripts/compose_run.sh logs
-
-# Show running services
-./scripts/compose_run.sh ps
-
-# Rebuild images
-./scripts/compose_run.sh build
-
-# Stop and remove everything including volumes
-./scripts/compose_run.sh clean
-```
+The repository includes a Python script (`scripts/plot_history.py`) for fetching and visualizing historical candle data with a GUI interface.
 
 **Features:**
-- Automatically checks for `.env` file existence
-- Displays service URLs after startup
-- Provides helpful command reminders
-- Supports all common Docker Compose operations
+- Graphical candlestick chart with OHLC data
+- Volume bar chart
+- Green/red candles for bullish/bearish moves
+- Grid lines and axis labels
+- Statistics panel with first/last candle info
+- Uses only built-in Python libraries (tkinter)
 
-#### `scripts/docker_build.sh` - Standalone Image Build
+**Requirements:**
+- Python 3 with tkinter (included by default on most systems)
 
-For building the price server Docker image independently:
+**Command-Line Parameters:**
+
+| Parameter | Required | Description | Example |
+|-----------|----------|-------------|---------|
+| `--instrument` | Yes | Trading pair symbol | `BTCUSDT@BINANCE` |
+| `--timeframe` | Yes | Candle interval | `1m`, `5m`, `1h` |
+| `--start` | Conditional* | Start timestamp (Unix epoch in seconds) | `1735516800` |
+| `--end` | No | End timestamp (Unix epoch in seconds), defaults to now | `1735520400` |
+| `--last` | Conditional* | Fetch last N bars from now | `100` |
+| `--host` | No | Price server hostname (default: `localhost`) | `localhost` |
+| `--port` | No | Price server port (default: `8080`) | `8080` |
+
+\* Either `--start` or `--last` must be provided, but not both.
+
+**Examples:**
 
 ```bash
-# Build with default 'latest' tag
-./scripts/docker_build.sh
+# Plot last 50 1-minute candles
+python3 scripts/plot_history.py --instrument BTCUSDT@BINANCE --timeframe 1m --last 50
 
-# Build with custom tag
-./scripts/docker_build.sh v1.0.0
+# Plot last 24 hourly candles
+python3 scripts/plot_history.py --instrument ETHUSDT@BINANCE --timeframe 1h --last 24
+
+# Plot 5-minute candles for specific date range
+python3 scripts/plot_history.py --instrument BTCUSDT@BINANCE --timeframe 5m --start 1735516800 --end 1735520400
+
+# Connect to remote server
+python3 scripts/plot_history.py --instrument BTCUSDT@BINANCE --timeframe 1m --last 100 --host 192.168.1.100 --port 8080
 ```
 
-This script uses the multi-stage Dockerfile to create an optimized production image.
+**Output:**
+- Opens a GUI window (1200x800) with interactive candlestick chart
+- Prints data statistics to console (time range, price range, volume)
 
-### Docker Architecture
-
-The Docker setup uses a **multi-stage build** for optimal image size and security:
-
-**Stage 1: Dependencies** (`eclipse-temurin:21-jdk-jammy`)
-- Downloads Gradle dependencies
-- Cached layer for faster rebuilds
-
-**Stage 2: Builder** (extends dependencies stage)
-- Copies source code
-- Builds fat JAR with all dependencies
-
-**Stage 3: Runtime** (`eclipse-temurin:21-jre-jammy`)
-- JRE-only base image (smaller, more secure)
-- Copies only the built JAR
-- Exposes port 8080
-- Final image size: ~300MB (vs 1GB+ for full JDK)
-
-**Docker Compose Services:**
-
-1. **price-server**
-   - Built from local Dockerfile
-   - Exposes configurable HTTP port (default: 8080)
-   - Mounts `./run/logs` for log persistence
-   - Auto-restarts unless stopped manually
-   - Waits for ClickHouse to be healthy before starting
-
-2. **clickhouse**
-   - Official ClickHouse image
-   - Exposes HTTP (8120) and native (9001) ports
-   - Persists data in `./run/clickhouse` volume
-   - Health check ensures database is ready
-   - Separate volume for logs
-
-**Networking:**
-- Services communicate via `price-network` bridge network
-- Price server connects to ClickHouse using hostname `clickhouse`
-- External access via mapped ports on localhost
-
-**Data Persistence:**
-- `./run/logs` - Price server application logs
-- `./run/clickhouse` - ClickHouse database files
-- `clickhouse-logs` - ClickHouse server logs (Docker volume)
+## Development
 
 ### Local Development Build and Run
 
 For development without Docker:
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/zharkomi/price_server.git
-   cd price_server
-   ```
-
-2. **Start ClickHouse** (if not using Docker Compose)
+1. **Start ClickHouse** (if not using Docker Compose)
    ```bash
    docker run -d -p 8123:8123 --name clickhouse clickhouse/clickhouse-server
    ```
 
-3. **Configure environment variables**
+2. **Configure environment variables**
    ```bash
    # Set up your instruments and timeframes
    export ps.instruments="BTCUSDT@BINANCE"
@@ -430,17 +489,24 @@ For development without Docker:
    export ps.clickhouse.url="jdbc:clickhouse://localhost:8123"
    ```
 
-4. **Build the project**
+3. **Build the project**
    ```bash
    ./gradlew build
    ```
 
-5. **Run the server**
+4. **Run the server**
    ```bash
    ./gradlew run
    ```
 
-### Alternative: Run with inline configuration
+5. **Shutdown**
+
+   Press `Ctrl+C` to gracefully shutdown the server. The shutdown hook will:
+   - Close all WebSocket connections
+   - Flush remaining candles
+   - Stop all processors and timers
+
+#### Alternative: Run with inline configuration
 
 ```bash
 ps.instruments="BTCUSDT@BINANCE,ETHUSDT@BINANCE" \
@@ -449,7 +515,7 @@ ps.timeframe.ETHUSDT@BINANCE="1m,5m" \
 ./gradlew run
 ```
 
-### Verify Operation
+#### Verify Operation
 
 The server will log its startup sequence and market data processing. Look for:
 - "Starting market data server..." at startup
@@ -464,21 +530,6 @@ curl "http://localhost:8080/health"
 # Query historical data (adjust timestamps as needed)
 curl "http://localhost:8080/history?symbol=BTCUSDT@BINANCE&interval=1m&from=1735516800&to=1735520400"
 ```
-
-### Shutdown
-
-**Docker Compose:**
-```bash
-./scripts/compose_run.sh down
-```
-
-**Local development:**
-Press `Ctrl+C` to gracefully shutdown the server. The shutdown hook will:
-- Close all WebSocket connections
-- Flush remaining candles
-- Stop all processors and timers
-
-## Development
 
 ### Build Tasks
 
