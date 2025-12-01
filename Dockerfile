@@ -45,5 +45,5 @@ ENTRYPOINT ["java", \
     "-XX:MaxRAMPercentage=75.0", \
     "-XX:+HeapDumpOnOutOfMemoryError", \
     "-XX:HeapDumpPath=/app/logs/heap_dump.hprof", \
-    "-Xlog:gc*:file=/app/logs/gc/gc.log:time,uptime,level,tags:filecount=5,filesize=10M", \
+    "-Xlog:gc*:file=/app/logs/gc.log:time,uptime,level,tags:filecount=5,filesize=10M", \
     "-jar", "app.jar"]
