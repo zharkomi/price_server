@@ -1,6 +1,7 @@
 package com.price.market;
 
 import com.price.event.MarketDataEvent;
+import com.price.market.source.Source;
 import com.price.storage.CandleProcessor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,7 @@ class CandleAggregatorTest {
     private CandleProcessor candleProcessor;
 
     private CandleAggregator candleAggregator;
-    private static final String INSTRUMENT = "BTCUSDT";
+    private static final Instrument INSTRUMENT = new Instrument("BTCUSDT", Source.BINANCE, new int[]{60000});
     private static final int TIMEFRAME_MS = 60000; // 1 minute
 
     @BeforeEach
@@ -92,7 +93,7 @@ class CandleAggregatorTest {
                 volumeCaptor.capture()
         );
 
-        assertEquals(INSTRUMENT, instrumentCaptor.getValue());
+        assertEquals(INSTRUMENT.fullName(), instrumentCaptor.getValue());
         assertEquals(TIMEFRAME_MS, timeframeCaptor.getValue());
         assertEquals(0L, timeCaptor.getValue()); // First candle starts at 0
         assertEquals(100.0, openCaptor.getValue());
@@ -117,7 +118,7 @@ class CandleAggregatorTest {
 
         // Verify candle was flushed
         verify(candleProcessor, times(1)).handleCandleEvent(
-                eq(INSTRUMENT),
+                eq(INSTRUMENT.fullName()),
                 eq(TIMEFRAME_MS),
                 eq(0L),
                 eq(100.0), // open
@@ -175,7 +176,7 @@ class CandleAggregatorTest {
         candleAggregator.onEvent(nextPeriodEvent, 5, true);
 
         verify(candleProcessor).handleCandleEvent(
-                eq(INSTRUMENT),
+                eq(INSTRUMENT.fullName()),
                 eq(TIMEFRAME_MS),
                 eq(0L),
                 eq(100.0), // open = first price
@@ -214,7 +215,8 @@ class CandleAggregatorTest {
     @Test
     void testDifferentTimeframePeriods() throws Exception {
         // Test with 5-minute timeframe (300000ms)
-        CandleAggregator fiveMinAggregator = new CandleAggregator(INSTRUMENT, 300000, candleProcessor);
+        Instrument fiveMinInstrument = new Instrument("BTCUSDT", Source.BINANCE, new int[]{300000});
+        CandleAggregator fiveMinAggregator = new CandleAggregator(fiveMinInstrument, 300000, candleProcessor);
 
         MarketDataEvent event1 = createMarketDataEvent(1000, 100.0, 10);
         MarketDataEvent event2 = createMarketDataEvent(150000, 105.0, 20);
@@ -229,7 +231,7 @@ class CandleAggregatorTest {
         fiveMinAggregator.onEvent(event4, 3, true);
 
         verify(candleProcessor).handleCandleEvent(
-                eq(INSTRUMENT),
+                eq(fiveMinInstrument.fullName()),
                 eq(300000),
                 eq(0L),
                 eq(100.0),
