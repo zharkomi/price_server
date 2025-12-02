@@ -31,9 +31,6 @@ WORKDIR /app
 # Copy built fat JAR from builder stage
 COPY --from=builder /app/build/libs/*-all.jar app.jar
 
-# Create log directory structure
-RUN mkdir -p /app/logs/gc
-
 # Expose HTTP API port
 EXPOSE 8080
 

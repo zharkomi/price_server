@@ -11,7 +11,7 @@ A high-performance Java 21 market data aggregation server that collects real-tim
 - [How to Start](#how-to-start)
   - [Prerequisites](#prerequisites)
   - [Quick Start with Docker](#quick-start-with-docker)
-  - [Docker Management Scripts](#docker-management-scripts)
+  - [Docker Management Commands](#docker-management-commands)
   - [Docker Architecture](#docker-architecture)
 - [REST API](#rest-api)
 - [Visualization Tools](#visualization-tools)
@@ -186,43 +186,37 @@ The easiest way to run the server is using Docker Compose, which automatically s
    cd price_server
    ```
 
-2. **Build the Docker image**
+2. **Build and start the services**
    ```bash
-   ./scripts/docker_build.sh
+   docker compose up --build -d
    ```
 
-   This uses a multi-stage Dockerfile to create an optimized production image:
-   - Stage 1: Downloads Gradle dependencies (cached layer)
-   - Stage 2: Builds fat JAR with all dependencies
-   - Stage 3: Runtime image with JRE only (~300MB vs 1GB+ for full JDK)
-
-3. **Start the services**
-   ```bash
-   ./scripts/compose_run.sh up
-   ```
-
-   This will:
+   This command will:
+   - Build the Docker image using
    - Start ClickHouse database
    - Wait for ClickHouse to be healthy
-   - Start the price server using the built image
-   - Display service URLs and helpful commands
+   - Start the price server
+   - Run both services in detached mode
 
-4. **Verify the services are running**
+3. **Verify the services are running**
    ```bash
    # Check service status
-   ./scripts/compose_run.sh ps
+   docker compose ps
 
-   # View logs
-   ./scripts/compose_run.sh logs
+   # View logs (follow mode)
+   docker compose logs -f
+
+   # View logs for specific service
+   docker compose logs -f price-server
 
    # Test the API
    curl "http://localhost:8080/health"
    ```
 
-5. **Shutdown**
+4. **Shutdown**
    ```bash
-   # Stop services
-   ./scripts/compose_run.sh down
+   # Stop and remove containers
+   docker compose down
    ```
 
    The shutdown process will:
@@ -231,57 +225,44 @@ The easiest way to run the server is using Docker Compose, which automatically s
    - Flush remaining candles
    - Stop all processors and timers
    - Stop ClickHouse database
+   - Remove containers (volumes are preserved)
 
-### Docker Management Scripts
+### Docker Management Commands
 
-The repository includes helper scripts for Docker operations:
-
-#### `scripts/docker_build.sh` - Standalone Image Build
-
-For building the price server Docker image independently:
+Common Docker Compose commands for managing the application stack:
 
 ```bash
-# Build with default 'latest' tag
-./scripts/docker_build.sh
+# Build and start services in detached mode
+docker compose up --build -d
 
-# Build with custom tag
-./scripts/docker_build.sh v1.0.0
-```
-
-This script uses the multi-stage Dockerfile to create an optimized production image.
-
-#### `scripts/compose_run.sh` - Docker Compose Management
-
-Main script for managing the entire application stack (price server + ClickHouse):
-
-```bash
-# Start services (builds if needed)
-./scripts/compose_run.sh up
-
-# Stop services
-./scripts/compose_run.sh down
-
-# Restart services
-./scripts/compose_run.sh restart
-
-# View logs (follow mode)
-./scripts/compose_run.sh logs
-
-# Show running services
-./scripts/compose_run.sh ps
-
-# Rebuild images
-./scripts/compose_run.sh build
+# Stop and remove containers (preserves volumes)
+docker compose down
 
 # Stop and remove everything including volumes
-./scripts/compose_run.sh clean
-```
+docker compose down -v
 
-**Features:**
-- Automatically checks for `.env` file existence
-- Displays service URLs after startup
-- Provides helpful command reminders
-- Supports all common Docker Compose operations
+# Restart services
+docker compose restart
+
+# View logs (follow mode)
+docker compose logs -f
+
+# View logs for specific service
+docker compose logs -f price-server
+docker compose logs -f clickhouse
+
+# Show running services
+docker compose ps
+
+# Rebuild images without starting
+docker compose build
+
+# Stop services without removing containers
+docker compose stop
+
+# Start stopped services
+docker compose start
+```
 
 ### Docker Architecture
 
