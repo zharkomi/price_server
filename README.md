@@ -192,7 +192,7 @@ The easiest way to run the server is using Docker Compose, which automatically s
    ```
 
    This command will:
-   - Build the Docker image using
+   - Build the Docker image
    - Start ClickHouse database
    - Wait for ClickHouse to be healthy
    - Start the price server
