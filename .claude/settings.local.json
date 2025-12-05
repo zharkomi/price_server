@@ -2,7 +2,6 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Bash(mkdir:*)",
       "WebFetch(domain:github.com)",
       "Bash(git add:*)",
       "Bash(cat:*)"

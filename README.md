@@ -5,20 +5,31 @@ A high-performance Java 21 market data aggregation server that collects real-tim
 ## Table of Contents
 
 - [Description](#description)
-- [Architecture](#architecture)
+  - [Key Features](#key-features)
+  - [Architecture](#architecture)
 - [Configuration](#configuration)
+  - [Required Variables](#required-variables)
+  - [Optional Variables](#optional-variables)
 - [Storage Layer](#storage-layer)
+  - [Why ClickHouse?](#why-clickhouse)
+  - [Storage Architecture](#storage-architecture)
+  - [Storage Features](#storage-features)
+  - [Storage Performance](#storage-performance)
+  - [Alternative Storage Backends](#alternative-storage-backends)
 - [How to Start](#how-to-start)
-  - [Prerequisites](#prerequisites)
-  - [Quick Start with Docker](#quick-start-with-docker)
   - [Docker Management Commands](#docker-management-commands)
   - [Docker Architecture](#docker-architecture)
 - [REST API](#rest-api)
+  - [Endpoints](#endpoints)
+  - [API Features](#api-features)
+  - [Configuration Example](#configuration-example)
 - [Visualization Tools](#visualization-tools)
+  - [History Plotter Script](#history-plotter-script)
 - [Development](#development)
   - [Local Development Build and Run](#local-development-build-and-run)
   - [Build Tasks](#build-tasks)
   - [Log Configuration](#log-configuration)
+- [TODO](#todo)
 
 ## Description
 
@@ -33,7 +44,6 @@ This server connects to cryptocurrency exchanges via WebSocket to receive real-t
 - **ClickHouse storage** - high-performance columnar database for time-series data with automatic schema management
 - **REST API** - HTTP endpoints for querying historical candle data with JSON responses
 - **Non-drifting timer** ensures candles are emitted at exact intervals even during low-volume periods
-- **Environment-based configuration** - no configuration files, all settings via environment variables
 - **Multiple instrument support** - monitor multiple trading pairs simultaneously
 
 ### Architecture
@@ -163,20 +173,6 @@ To add a new repository:
 4. Add configuration variables for the new backend
 
 ## How to Start
-
-### Prerequisites
-
-**For Docker deployment (recommended):**
-- Docker and Docker Compose
-- Internet connection (for WebSocket connection to exchanges)
-
-**For local development:**
-- ClickHouse database (for persistent storage of candle data)
-  - Installation: https://clickhouse.com/docs/en/install
-  - Or run via Docker: `docker run -d -p 8123:8123 clickhouse/clickhouse-server`
-- Internet connection (for WebSocket connection to exchanges)
-
-### Quick Start with Docker
 
 The easiest way to run the server is using Docker Compose, which automatically sets up both the price server and ClickHouse database.
 
@@ -561,3 +557,11 @@ Logging is configured via `src/main/resources/log4j2.xml`. By default:
 - Console output at INFO level
 - Rolling file logs in `logs/` directory
 - Separate rolling file for errors
+
+
+## TODO
+- Add connection pooling to Clickhouse repository
+- Implement manual event parsing for Binance
+- Add option to get time from message payload instead of local system time
+- Implement online subscription via WebSocket API
+- Add file-based configuration option
