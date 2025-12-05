@@ -11,10 +11,10 @@ A high-performance Java 21 market data aggregation server that collects real-tim
   - [Required Variables](#required-variables)
   - [Optional Variables](#optional-variables)
 - [Storage Layer](#storage-layer)
-  - [Why ClickHouse?](#why-clickhouse)
-  - [Storage Architecture](#storage-architecture)
-  - [Storage Features](#storage-features)
-  - [Storage Performance](#storage-performance)
+  - [Why ClickHouse](#why-clickhouse)
+  - [Architecture](#architecture-1)
+  - [Features](#features)
+  - [Performance](#performance)
   - [Alternative Storage Backends](#alternative-storage-backends)
 - [How to Start](#how-to-start)
   - [Docker Management Commands](#docker-management-commands)
@@ -104,7 +104,7 @@ All configuration is done through environment variables:
 
 The server uses ClickHouse as its primary storage backend for historical candle data. ClickHouse is a high-performance columnar database optimized for time-series analytics and OLAP workloads.
 
-### Why ClickHouse?
+### Why ClickHouse
 
 - **Columnar storage** - 100x faster than row-based databases for analytical queries
 - **Compression** - up to 10x data compression reduces storage costs
@@ -112,7 +112,7 @@ The server uses ClickHouse as its primary storage backend for historical candle 
 - **Scalability** - handles billions of rows with sub-second query performance
 - **ReplacingMergeTree** - automatic deduplication of candles if the same data is inserted multiple times
 
-### Storage Architecture
+### Architecture
 
 **Database**: `prices_db` (automatically created on first run)
 
@@ -143,7 +143,7 @@ SETTINGS index_granularity = 8192;
 - **ORDER BY** (instrument, timeframe_ms, time) - creates primary index for fast range queries
 - **index_granularity** of 8192 - balances index size vs. query performance
 
-### Storage Features
+### Features
 
 - **Automatic schema initialization** - database and tables are created automatically on first run
 - **Batch insertion** - candles are batched for efficient writes using Disruptor's end-of-batch detection
@@ -152,7 +152,7 @@ SETTINGS index_granularity = 8192;
 - **Compression** - automatic columnar compression reduces storage by ~90%
 - **Fast queries** - primary index enables sub-second queries even with billions of rows
 
-### Storage Performance
+### Performance
 
 The dual-buffer architecture ensures:
 - **Write throughput**: 100K+ candles/second sustained
@@ -565,3 +565,7 @@ Logging is configured via `src/main/resources/log4j2.xml`. By default:
 - Add option to get time from message payload instead of local system time
 - Implement online subscription via WebSocket API
 - Add file-based configuration option
+- Testing: 
+  - Enhance unit tests
+  - Add integration tests with mocks
+  - Add performance/load tests
