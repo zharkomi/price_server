@@ -1,6 +1,6 @@
 # Market Price Server
 
-A high-performance Java 21 market data aggregation server that collects real-time cryptocurrency price data from exchanges and aggregates it into OHLCV (Open, High, Low, Close, Volume) candles at configurable timeframes.
+A high-performance Java market data aggregation server that collects real-time cryptocurrency price data from exchanges and aggregates it into OHLCV (Open, High, Low, Close, Volume) candles at configurable timeframes.
 
 ## Table of Contents
 
@@ -12,7 +12,7 @@ A high-performance Java 21 market data aggregation server that collects real-tim
   - [Optional Variables](#optional-variables)
 - [Storage Layer](#storage-layer)
   - [Why ClickHouse](#why-clickhouse)
-  - [Architecture](#architecture-1)
+  - [Schema](#schema)
   - [Features](#features)
   - [Performance](#performance)
   - [Alternative Storage Backends](#alternative-storage-backends)
@@ -112,7 +112,7 @@ The server uses ClickHouse as its primary storage backend for historical candle 
 - **Scalability** - handles billions of rows with sub-second query performance
 - **ReplacingMergeTree** - automatic deduplication of candles if the same data is inserted multiple times
 
-### Architecture
+### Schema
 
 **Database**: `prices_db` (automatically created on first run)
 
@@ -264,30 +264,31 @@ docker compose start
 
 The Docker setup uses a **multi-stage build** for optimal image size and security:
 
-**Stage 1: Dependencies** (`eclipse-temurin:21-jdk-jammy`)
-- Downloads Gradle dependencies
-- Cached layer for faster rebuilds
+**Docker Layers:**
 
-**Stage 2: Builder** (extends dependencies stage)
-- Copies source code
-- Builds fat JAR with all dependencies
+1. **Dependencies** (`eclipse-temurin:21-jdk-jammy`)
+   - Downloads Gradle dependencies
+   - Cached layer for faster rebuilds
 
-**Stage 3: Runtime** (`eclipse-temurin:21-jre-jammy`)
-- JRE-only base image (smaller, more secure)
-- Copies only the built JAR
-- Exposes port 8080
-- Final image size: ~300MB (vs 1GB+ for full JDK)
+2. **Builder** (extends dependencies stage)
+   - Copies source code
+   - Builds fat JAR with all dependencies
+
+3. **Runtime** (`eclipse-temurin:21-jre-jammy`)
+   - JRE-only base image (smaller, more secure)
+   - Copies only the built JAR
+   - Exposes port 8080
+   - Final image size: ~300MB (vs 1GB+ for full JDK)
 
 **Docker Compose Services:**
-
-1. **price-server**
+- **price-server**
    - Built from local Dockerfile
    - Exposes configurable HTTP port (default: 8080)
    - Mounts `./run/logs` for log persistence
    - Auto-restarts unless stopped manually
    - Waits for ClickHouse to be healthy before starting
 
-2. **clickhouse**
+- **clickhouse**
    - Official ClickHouse image
    - Exposes HTTP (8120) and native (9001) ports
    - Persists data in `./run/clickhouse` volume
