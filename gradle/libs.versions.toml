@@ -1,0 +1,48 @@
+[versions]
+binance = "3.4.1"
+disruptor = "4.0.0"
+commons-lang3 = "3.14.0"
+commons-io = "2.18.0"
+json = "20231013"
+jackson = "2.18.2"
+clickhouse = "0.6.5"
+httpclient5 = "5.3.1"
+lz4 = "1.8.0"
+jetty = "11.0.24"
+netty = "4.1.116.Final"
+log4j = "2.24.3"
+lombok = "1.18.34"
+junit = "5.10.1"
+mockito = "5.8.0"
+
+[libraries]
+binance-connector = { module = "io.github.binance:binance-connector-java", version.ref = "binance" }
+disruptor = { module = "com.lmax:disruptor", version.ref = "disruptor" }
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+json = { module = "org.json:json", version.ref = "json" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+clickhouse-jdbc = { module = "com.clickhouse:clickhouse-jdbc", version.ref = "clickhouse" }
+httpclient5 = { module = "org.apache.httpcomponents.client5:httpclient5", version.ref = "httpclient5" }
+lz4-java = { module = "org.lz4:lz4-java", version.ref = "lz4" }
+jetty-server = { module = "org.eclipse.jetty:jetty-server", version.ref = "jetty" }
+jetty-servlet = { module = "org.eclipse.jetty:jetty-servlet", version.ref = "jetty" }
+netty-all = { module = "io.netty:netty-all", version.ref = "netty" }
+log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j" }
+log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
+log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+jetty-client = { module = "org.eclipse.jetty:jetty-client", version.ref = "jetty" }
+
+[bundles]
+log4j = ["log4j-api", "log4j-core", "log4j-slf4j2-impl"]
+mockito = ["mockito-core", "mockito-junit-jupiter"]
+jetty = ["jetty-server", "jetty-servlet"]
+clickhouse = ["clickhouse-jdbc", "httpclient5", "lz4-java"]
+
+[plugins]
+java = { id = "java" }
+application = { id = "application" }

@@ -1,1 +1,3 @@
-rootProject.name = 'price_server'
+rootProject.name = 'price-server'
+
+include 'price-stream'

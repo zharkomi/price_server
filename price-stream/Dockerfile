@@ -5,23 +5,24 @@ FROM eclipse-temurin:21-jdk-jammy AS dependencies
 
 WORKDIR /app
 
-# Copy Gradle wrapper and build files
+# Copy Gradle wrapper and build files from the project root
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
+COPY gradle/libs.versions.toml gradle/libs.versions.toml
+COPY price-stream/build.gradle price-stream/build.gradle
+COPY price-stream/src price-stream/src
+
 
 # Download dependencies (cached layer)
-RUN ./gradlew dependencies --no-daemon
+RUN ./gradlew :price-stream:dependencies --no-daemon
 
 # Stage 2: Build with sources
 FROM dependencies AS builder
 
-# Copy source code
-COPY src src
-
 # Build the application with fat JAR
-RUN ./gradlew fatJar --no-daemon
+RUN ./gradlew :price-stream:fatJar --no-daemon
 
 # Stage 3: Runtime with JRE only
 FROM eclipse-temurin:21-jre-jammy
@@ -29,7 +30,7 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Copy built fat JAR from builder stage
-COPY --from=builder /app/build/libs/*-all.jar app.jar
+COPY --from=builder /app/price-stream/build/libs/*-all.jar app.jar
 
 # Expose HTTP API port
 EXPOSE 8080

@@ -1,4 +1,4 @@
-# Market Price Server
+# Price Server
 
 A high-performance Java market data aggregation server that collects real-time cryptocurrency price data from exchanges and aggregates it into OHLCV (Open, High, Low, Close, Volume) candles at configurable timeframes.
 
@@ -564,7 +564,7 @@ Logging is configured via `src/main/resources/log4j2.xml`. By default:
 - Add connection pooling to Clickhouse repository
 - Implement manual event parsing for Binance
 - Add option to get time from message payload instead of local system time
-- Implement online subscription via WebSocket API
+- ~~Implement online subscription via WebSocket API~~
 - ~~Add file-based configuration option~~
 - Testing: 
   - Enhance unit tests

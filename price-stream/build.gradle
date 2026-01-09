@@ -1,0 +1,73 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.example'
+version = '1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation libs.binance.connector
+    implementation libs.disruptor
+    implementation libs.commons.lang3
+    implementation libs.commons.io
+    implementation libs.json
+    implementation libs.jackson.databind
+
+    // ClickHouse
+    implementation libs.bundles.clickhouse
+
+    // Jetty
+    implementation libs.bundles.jetty
+
+    // Netty
+    implementation libs.netty.all
+
+    // Logging
+    implementation libs.bundles.log4j
+
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+
+    // Testing
+    testImplementation libs.junit.jupiter
+    testImplementation libs.bundles.mockito
+    testImplementation libs.jetty.client
+}
+
+test {
+    useJUnitPlatform()
+}
+
+application {
+    mainClass = 'com.price.Server'
+}
+
+jar {
+    enabled = false
+    manifest {
+        attributes('Main-Class': application.mainClass)
+    }
+}
+
+tasks.register('fatJar', Jar) {
+    archiveClassifier = 'all'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes('Main-Class': application.mainClass)
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}
