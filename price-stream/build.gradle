@@ -49,7 +49,7 @@ test {
 }
 
 application {
-    mainClass = 'com.price.Server'
+    mainClass = 'com.price.stream.StreamServer'
 }
 
 jar {

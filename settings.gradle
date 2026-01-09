@@ -1,3 +1,4 @@
 rootProject.name = 'price-server'
 
 include 'price-stream'
+include 'price-query'

@@ -1,9 +1,9 @@
-package com.price.market;
-
-import com.price.common.config.Instrument;
-import com.price.event.buffer.MarketDataEvent;
-import com.price.market.source.Source;
-import com.price.storage.CandlePersistenceProcessor;
+import com.price.stream.common.SubscriptionKey;
+import com.price.stream.common.config.Instrument;
+import com.price.stream.event.buffer.MarketDataEvent;
+import com.price.stream.market.CandleAggregator;
+import com.price.stream.market.source.Source;
+import com.price.stream.storage.CandlePersistenceProcessor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,7 +11,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -23,10 +26,12 @@ class CandleAggregatorTest {
     private CandleAggregator candleAggregator;
     private static final Instrument INSTRUMENT = new Instrument("BTCUSDT", Source.BINANCE, new int[]{60000});
     private static final int TIMEFRAME_MS = 60000; // 1 minute
+    private static final SubscriptionKey SUBSCRIPTION_KEY = new SubscriptionKey(INSTRUMENT.fullName(), TIMEFRAME_MS);
+
 
     @BeforeEach
     void setUp() {
-        candleAggregator = new CandleAggregator(INSTRUMENT, TIMEFRAME_MS, null);
+        candleAggregator = new CandleAggregator(INSTRUMENT, TIMEFRAME_MS, List.of(candleProcessor));
     }
 
     @Test
@@ -37,7 +42,7 @@ class CandleAggregatorTest {
 
         // No candle should be flushed yet (candle is still open)
         verify(candleProcessor, never()).handleCandleEvent(
-                anyString(), anyInt(), anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
+                any(SubscriptionKey.class), anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
         );
     }
 
@@ -54,7 +59,7 @@ class CandleAggregatorTest {
 
         // No candle should be flushed yet (all in same period)
         verify(candleProcessor, never()).handleCandleEvent(
-                anyString(), anyInt(), anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
+                any(SubscriptionKey.class), anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
         );
     }
 
@@ -74,8 +79,7 @@ class CandleAggregatorTest {
         candleAggregator.onEvent(event4, 3, true);
 
         // Verify first candle was flushed with correct OHLCV values
-        ArgumentCaptor<String> instrumentCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> timeframeCaptor = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<SubscriptionKey> subscriptionKeyCaptor = ArgumentCaptor.forClass(SubscriptionKey.class);
         ArgumentCaptor<Long> timeCaptor = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<Double> openCaptor = ArgumentCaptor.forClass(Double.class);
         ArgumentCaptor<Double> highCaptor = ArgumentCaptor.forClass(Double.class);
@@ -84,8 +88,7 @@ class CandleAggregatorTest {
         ArgumentCaptor<Long> volumeCaptor = ArgumentCaptor.forClass(Long.class);
 
         verify(candleProcessor, times(1)).handleCandleEvent(
-                instrumentCaptor.capture(),
-                timeframeCaptor.capture(),
+                subscriptionKeyCaptor.capture(),
                 timeCaptor.capture(),
                 openCaptor.capture(),
                 highCaptor.capture(),
@@ -94,8 +97,7 @@ class CandleAggregatorTest {
                 volumeCaptor.capture()
         );
 
-        assertEquals(INSTRUMENT.fullName(), instrumentCaptor.getValue());
-        assertEquals(TIMEFRAME_MS, timeframeCaptor.getValue());
+        assertEquals(SUBSCRIPTION_KEY, subscriptionKeyCaptor.getValue());
         assertEquals(0L, timeCaptor.getValue()); // First candle starts at 0
         assertEquals(100.0, openCaptor.getValue());
         assertEquals(110.0, highCaptor.getValue());
@@ -119,8 +121,7 @@ class CandleAggregatorTest {
 
         // Verify candle was flushed
         verify(candleProcessor, times(1)).handleCandleEvent(
-                eq(INSTRUMENT.fullName()),
-                eq(TIMEFRAME_MS),
+                eq(SUBSCRIPTION_KEY),
                 eq(0L),
                 eq(100.0), // open
                 eq(105.0), // high
@@ -138,7 +139,7 @@ class CandleAggregatorTest {
 
         // No candle should be flushed (no data events received)
         verify(candleProcessor, never()).handleCandleEvent(
-                anyString(), anyInt(), anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
+                any(SubscriptionKey.class), anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
         );
     }
 
@@ -153,7 +154,7 @@ class CandleAggregatorTest {
 
         // No flush should occur (timer in same period)
         verify(candleProcessor, never()).handleCandleEvent(
-                anyString(), anyInt(), anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
+                any(SubscriptionKey.class), anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
         );
     }
 
@@ -177,8 +178,7 @@ class CandleAggregatorTest {
         candleAggregator.onEvent(nextPeriodEvent, 5, true);
 
         verify(candleProcessor).handleCandleEvent(
-                eq(INSTRUMENT.fullName()),
-                eq(TIMEFRAME_MS),
+                eq(SUBSCRIPTION_KEY),
                 eq(0L),
                 eq(100.0), // open = first price
                 eq(110.0), // high = max price
@@ -209,7 +209,7 @@ class CandleAggregatorTest {
 
         // Verify two candles were flushed
         verify(candleProcessor, times(2)).handleCandleEvent(
-                anyString(), anyInt(), anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
+                any(SubscriptionKey.class), anyLong(), anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
         );
     }
 
@@ -217,7 +217,8 @@ class CandleAggregatorTest {
     void testDifferentTimeframePeriods() throws Exception {
         // Test with 5-minute timeframe (300000ms)
         Instrument fiveMinInstrument = new Instrument("BTCUSDT", Source.BINANCE, new int[]{300000});
-        CandleAggregator fiveMinAggregator = new CandleAggregator(fiveMinInstrument, 300000, null);
+        CandleAggregator fiveMinAggregator = new CandleAggregator(fiveMinInstrument, 300000, List.of(candleProcessor));
+        SubscriptionKey fiveMinSubscriptionKey = new SubscriptionKey(fiveMinInstrument.fullName(), 300000);
 
         MarketDataEvent event1 = createMarketDataEvent(1000, 100.0, 10);
         MarketDataEvent event2 = createMarketDataEvent(150000, 105.0, 20);
@@ -232,8 +233,7 @@ class CandleAggregatorTest {
         fiveMinAggregator.onEvent(event4, 3, true);
 
         verify(candleProcessor).handleCandleEvent(
-                eq(fiveMinInstrument.fullName()),
-                eq(300000),
+                eq(fiveMinSubscriptionKey),
                 eq(0L),
                 eq(100.0),
                 eq(105.0),
@@ -259,7 +259,7 @@ class CandleAggregatorTest {
 
         ArgumentCaptor<Long> timeCaptor = ArgumentCaptor.forClass(Long.class);
         verify(candleProcessor).handleCandleEvent(
-                anyString(), anyInt(), timeCaptor.capture(),
+                any(SubscriptionKey.class), timeCaptor.capture(),
                 anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyLong()
         );
 
@@ -283,3 +283,4 @@ class CandleAggregatorTest {
         return event;
     }
 }
+

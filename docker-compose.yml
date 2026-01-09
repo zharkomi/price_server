@@ -1,14 +1,34 @@
 version: '3.8'
 
 services:
+  price-query:
+    build:
+      context: .
+      dockerfile: ./price-query/Dockerfile
+    image: ${QUERY_IMAGE_NAME:-price-query}:${IMAGE_TAG:-latest}
+    container_name: ${QUERY_CONTAINER_NAME:-price-query}
+    volumes:
+      - ./run/logs:/app/logs
+      - ./config:/app/config:ro
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+    environment:
+      - ps.clickhouse.url=jdbc:clickhouse://clickhouse:8123
+      - ps.clickhouse.user=${CLICKHOUSE_USER:-default}
+      - ps.clickhouse.password=${CLICKHOUSE_PASSWORD:-}
+    restart: unless-stopped
+    networks:
+      - price-network
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
   price-stream:
     build:
       context: .
       dockerfile: ./price-stream/Dockerfile
     image: ${STREAM_IMAGE_NAME:-price-stream}:${IMAGE_TAG:-latest}
     container_name: ${STREAM_CONTAINER_NAME:-price-stream}
-    ports:
-      - "${HTTP_PORT:-8080}:8080"
     volumes:
       - ./run/logs:/app/logs
       - ./config:/app/config:ro

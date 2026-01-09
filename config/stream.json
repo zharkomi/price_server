@@ -13,7 +13,7 @@
   ],
   "dataBases": [
     {
-      "type": "com.price.storage.db.ClickHouseRepository",
+      "type": "com.price.stream.storage.db.ClickHouseRepository",
       "url": "jdbc:clickhouse://localhost:8123",
       "user": "default",
       "password": "000"
