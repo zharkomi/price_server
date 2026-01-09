@@ -1,4 +1,4 @@
-package com.price.stream.common.config;
+package com.price.common.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

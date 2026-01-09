@@ -1,15 +1,15 @@
 package com.price.stream;
 
-import com.price.stream.common.config.Configuration;
-import com.price.stream.common.config.Instrument;
+import com.price.common.config.PriceConfiguration;
+import com.price.common.config.Instrument;
 import com.price.stream.market.MarketDataProcessor;
 import com.price.stream.market.NonDriftingTimer;
 import com.price.stream.market.source.ConnectorFactory;
 
 import com.price.stream.service.StreamService;
 import com.price.stream.storage.CandlePersistenceProcessor;
-import com.price.stream.storage.Repository;
-import com.price.stream.storage.db.RepositoryFactory;
+import com.price.common.storage.SaveRepository;
+import com.price.common.storage.RepositoryFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ public class StreamServer {
     private static final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     public static void main(String[] args) {
-        var configuration = Configuration.read();
+        var configuration = PriceConfiguration.read();
         List<AutoCloseable> services = new ArrayList<>();
 
         NonDriftingTimer timer = new NonDriftingTimer();
@@ -33,12 +33,12 @@ public class StreamServer {
         ConnectorFactory connectorFactory = new ConnectorFactory(configuration.getSources());
         services.add(connectorFactory);
 
-        RepositoryFactory repositoryFactory = new RepositoryFactory(configuration);
+        RepositoryFactory<SaveRepository> repositoryFactory = new RepositoryFactory<>(configuration);
         services.add(repositoryFactory);
-        List<Repository> repositories = repositoryFactory.getRepositories();
+        List<SaveRepository> repositories = repositoryFactory.getRepositories();
 
         List<CandlePersistenceProcessor> candleProcessors = new ArrayList<>();
-        for (Repository repository : repositories) {
+        for (SaveRepository repository : repositories) {
             CandlePersistenceProcessor candleProcessor = new CandlePersistenceProcessor(repository, configuration);
             candleProcessor.start();
             services.add(candleProcessor);

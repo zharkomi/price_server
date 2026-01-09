@@ -1,0 +1,31 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.price'
+version = '1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation libs.jackson.databind
+    implementation libs.commons.lang3
+    implementation libs.disruptor
+    implementation libs.bundles.log4j
+
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+
+    testImplementation libs.junit.jupiter
+}
+
+test {
+    useJUnitPlatform()
+}

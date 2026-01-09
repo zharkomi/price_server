@@ -1,9 +1,8 @@
-package com.price.stream.common.config;
+package com.price.common.config;
 
-import com.price.stream.common.Util;
-import com.price.stream.market.source.Source;
+import com.price.common.Source;
+import com.price.common.Util;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +23,7 @@ public class PropertyConfigurationReader {
     public static final String DEFAULT_REPOSITORY_TYPE = "com.price.stream.storage.db.ClickHouseRepository";
     public static final String DEFAULT_HTTP_PORT = "8080";
 
-    public Configuration read() {
+    public PriceConfiguration read() {
         List<Instrument> instruments = parseInstruments();
         var db = new DataBase(
                 System.getenv().getOrDefault(ENV_REPOSITORY_TYPE, DEFAULT_REPOSITORY_TYPE),
@@ -32,7 +31,7 @@ public class PropertyConfigurationReader {
                 System.getenv(ENV_CLICKHOUSE_USER),
                 System.getenv(ENV_CLICKHOUSE_PASSWORD)
         );
-        return new Configuration(
+        return new PriceConfiguration(
                 instruments,
                 List.of(db),
                 Integer.parseInt(System.getenv().getOrDefault(ENV_HTTP_PORT, DEFAULT_HTTP_PORT)),
@@ -58,7 +57,6 @@ public class PropertyConfigurationReader {
         return result;
     }
 
-    @Nullable
     private Instrument parseInstrument(String spec) {
         spec = spec.trim();
         if (spec.isEmpty()) {

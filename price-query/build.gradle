@@ -22,9 +22,12 @@ configurations {
 }
 
 dependencies {
+    implementation project(':price-common')
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-log4j2'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'com.zaxxer:HikariCP:5.1.0'
     implementation libs.bundles.clickhouse
 
     compileOnly libs.lombok

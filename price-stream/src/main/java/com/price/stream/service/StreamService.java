@@ -1,6 +1,6 @@
 package com.price.stream.service;
 
-import com.price.stream.common.config.Configuration;
+import com.price.common.config.PriceConfiguration;
 import com.price.stream.market.MarketDataProcessor;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -30,7 +30,7 @@ public class StreamService implements AutoCloseable {
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
 
-    public StreamService(Configuration configuration, Map<String, MarketDataProcessor> marketDataProcessorMap) {
+    public StreamService(PriceConfiguration configuration, Map<String, MarketDataProcessor> marketDataProcessorMap) {
         this.port = configuration.httpPort() + 1;
         this.marketDataProcessorMap = marketDataProcessorMap;
     }

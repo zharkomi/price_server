@@ -4,10 +4,11 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
+import com.price.common.storage.SaveRepository;
 import com.price.stream.common.CandleProcessor;
 import com.price.stream.common.SubscriptionKey;
-import com.price.stream.common.config.Configuration;
-import com.price.stream.event.buffer.CandleEvent;
+import com.price.common.config.PriceConfiguration;
+import com.price.common.storage.CandleEvent;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Executors;
@@ -17,7 +18,7 @@ public class CandlePersistenceProcessor implements CandleProcessor, AutoCloseabl
     private final Disruptor<CandleEvent> disruptor;
     private final RingBuffer<CandleEvent> ringBuffer;
 
-    public CandlePersistenceProcessor(Repository repository, Configuration configuration) {
+    public CandlePersistenceProcessor(SaveRepository repository, PriceConfiguration configuration) {
         disruptor = new Disruptor<>(
                 CandleEvent::new,
                 configuration.disruptorBufferSize(),

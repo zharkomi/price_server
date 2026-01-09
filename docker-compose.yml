@@ -33,7 +33,7 @@ services:
       - ./run/logs:/app/logs
       - ./config:/app/config:ro
     environment:
-      - CONFIG_FILE=${CONFIG_FILE:-/app/config/stream.json}
+      - CONFIG_FILE=${CONFIG_FILE:-/app/config/config.json}
     restart: unless-stopped
     extra_hosts:
       - "localhost:host-gateway"

@@ -5,8 +5,8 @@ import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.price.stream.common.config.Configuration;
-import com.price.stream.common.config.Instrument;
+import com.price.common.config.PriceConfiguration;
+import com.price.common.config.Instrument;
 import com.price.stream.event.buffer.MarketDataEvent;
 import com.price.stream.service.SubscriptionProcessor;
 import com.price.stream.storage.CandlePersistenceProcessor;
@@ -26,7 +26,7 @@ public class MarketDataProcessor implements AutoCloseable {
     private final RingBuffer<MarketDataEvent> ringBuffer;
     private final Map<Integer, CandleAggregator> aggregators;
 
-    public MarketDataProcessor(Instrument instrument, List<CandlePersistenceProcessor> candleProcessors, Configuration configuration) {
+    public MarketDataProcessor(Instrument instrument, List<CandlePersistenceProcessor> candleProcessors, PriceConfiguration configuration) {
         this.instrument = instrument;
 
         disruptor = new Disruptor<>(

@@ -2,7 +2,7 @@ package com.price.query.controller;
 
 import com.price.query.dto.HistoryResponse;
 import com.price.query.service.HistoryService;
-import com.price.query.storage.Candle;
+import com.price.common.storage.Candle;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

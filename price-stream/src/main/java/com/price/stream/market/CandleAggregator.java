@@ -3,7 +3,7 @@ package com.price.stream.market;
 import com.lmax.disruptor.EventHandler;
 import com.price.stream.common.CandleProcessor;
 import com.price.stream.common.SubscriptionKey;
-import com.price.stream.common.config.Instrument;
+import com.price.common.config.Instrument;
 import com.price.stream.event.buffer.MarketDataEvent;
 import com.price.stream.service.SubscriptionProcessor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.price.stream.common;
+package com.price.common;
 
 public class Util {
     public static int parseTimeframeToMilliseconds(String timeframe) {

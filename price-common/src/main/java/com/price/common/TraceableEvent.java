@@ -1,4 +1,4 @@
-package com.price.stream.common;
+package com.price.common;
 
 import lombok.Getter;
 import lombok.Setter;

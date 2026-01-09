@@ -1,8 +1,8 @@
+import com.price.common.Source;
+import com.price.common.config.Instrument;
 import com.price.stream.common.SubscriptionKey;
-import com.price.stream.common.config.Instrument;
 import com.price.stream.event.buffer.MarketDataEvent;
 import com.price.stream.market.CandleAggregator;
-import com.price.stream.market.source.Source;
 import com.price.stream.storage.CandlePersistenceProcessor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

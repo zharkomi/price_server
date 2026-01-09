@@ -16,6 +16,8 @@ repositories {
 }
 
 dependencies {
+    implementation project(':price-common')
+
     implementation libs.binance.connector
     implementation libs.disruptor
     implementation libs.commons.lang3

@@ -1,9 +1,9 @@
-package com.price.stream.storage.db;
+package com.price.db;
 
 import com.lmax.disruptor.EventHandler;
-import com.price.stream.common.config.DataBase;
-import com.price.stream.event.buffer.CandleEvent;
-import com.price.stream.storage.Repository;
+import com.price.common.config.DataBase;
+import com.price.common.storage.CandleEvent;
+import com.price.common.storage.SaveRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.*;
 
 @Slf4j
-public class ClickHouseRepository implements Repository, EventHandler<CandleEvent>, AutoCloseable {
+public class ClickHouseRepository implements SaveRepository, EventHandler<CandleEvent>, AutoCloseable {
     private static final String DATABASE_NAME = "prices_db";
     private static final String SCHEMA_RESOURCE = "/clickhouse/schema.sql";
 

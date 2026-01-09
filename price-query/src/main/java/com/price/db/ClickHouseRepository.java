@@ -1,7 +1,11 @@
-package com.price.query.storage;
+package com.price.db;
 
+import com.price.common.config.DataBase;
+import com.price.common.storage.Candle;
+import com.price.common.storage.QueryRepository;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
 import java.sql.*;
@@ -10,7 +14,7 @@ import java.util.List;
 
 @Slf4j
 @Repository
-public class ClickHouseRepository implements com.price.query.storage.Repository {
+public class ClickHouseRepository implements QueryRepository {
     private static final String DATABASE_NAME = "prices_db";
 
     public static final String QUERY_SELECT_CANDLES = "SELECT time, open, high, low, close, volume " +
@@ -18,27 +22,25 @@ public class ClickHouseRepository implements com.price.query.storage.Repository 
             "WHERE instrument = ? AND timeframe_ms = ? AND time >= ? AND time < ? " +
             "ORDER BY time ASC";
 
-    private final String url;
-    private final String user;
-    private final String password;
-    private Connection connection;
-
-    public ClickHouseRepository(@Value("${ps.clickhouse.url}") String url,
-                                @Value("${ps.clickhouse.user}") String user,
-                                @Value("${ps.clickhouse.password}") String password) {
-        // Disable compression to avoid LZ4 issues
-        this.url = url + "/" + DATABASE_NAME + "?compress=0";
-        this.user = user;
-        this.password = password;
+    private final HikariDataSource dataSource;
+    public ClickHouseRepository(DataBase dataBase) {
         log.info("ClickHouseRepository configured for database: {}", DATABASE_NAME);
+
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(dataBase.url());
+        config.setUsername(dataBase.user());
+        config.setPassword(dataBase.password());
+        config.setDriverClassName("com.clickhouse.jdbc.ClickHouseDriver");
+        config.setMaximumPoolSize(10); // Example size
+        config.setMinimumIdle(2);     // Example idle connections
+        config.setIdleTimeout(600000); // 10 minutes
+        config.setConnectionTimeout(30000); // 30 seconds
+
+        this.dataSource = new HikariDataSource(config);
     }
 
     private Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            connection = DriverManager.getConnection(url, user, password);
-            log.info("Connected to ClickHouse database: {}", DATABASE_NAME);
-        }
-        return connection;
+        return dataSource.getConnection();
     }
 
     @Override
@@ -76,5 +78,13 @@ public class ClickHouseRepository implements com.price.query.storage.Repository 
         log.info("Queried {} candles for instrument {} timeframe {}ms from {} to {}",
                 candles.size(), instrument, timeframeMs, fromTimestamp, toTimestamp);
         return candles;
+    }
+
+    @Override
+    public void close() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+            log.info("ClickHouse HikariDataSource closed.");
+        }
     }
 }

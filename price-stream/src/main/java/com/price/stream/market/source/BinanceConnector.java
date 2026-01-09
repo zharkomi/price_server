@@ -3,7 +3,7 @@ package com.price.stream.market.source;
 import com.binance.connector.client.WebSocketStreamClient;
 import com.binance.connector.client.impl.WebSocketStreamClientImpl;
 import com.price.stream.market.Connector;
-import com.price.stream.common.config.Instrument;
+import com.price.common.config.Instrument;
 import com.price.stream.market.MarketDataProcessor;
 import org.json.JSONObject;
 import org.slf4j.Logger;

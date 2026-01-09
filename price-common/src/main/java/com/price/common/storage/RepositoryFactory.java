@@ -1,28 +1,29 @@
-package com.price.stream.storage.db;
+package com.price.common.storage;
 
-import com.price.stream.common.config.Configuration;
-import com.price.stream.common.config.DataBase;
-import com.price.stream.storage.Repository;
+import com.price.common.config.PriceConfiguration;
+import com.price.common.config.DataBase;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
-public class RepositoryFactory implements AutoCloseable {
-    private final Configuration configuration;
-    private List<Repository> repositories = new ArrayList<>();
+public class RepositoryFactory<T extends AutoCloseable> implements AutoCloseable {
+    private final PriceConfiguration configuration;
 
-    public RepositoryFactory(Configuration configuration) {
+    private final List<T> repositories = new ArrayList<>();
+
+    public RepositoryFactory(PriceConfiguration configuration) {
         this.configuration = configuration;
     }
 
-    public List<Repository> getRepositories() {
+    @SuppressWarnings("unchecked")
+    public List<T> getRepositories() {
         if (repositories.isEmpty()) {
             for (DataBase dataBase : configuration.dataBases()) {
                 log.info("Creating repository: {}", dataBase);
                 try {
-                    repositories.add((Repository) Class.forName(dataBase.type())
+                    repositories.add((T) Class.forName(dataBase.type())
                             .getConstructor(DataBase.class)
                             .newInstance(dataBase));
                 } catch (Exception e) {
@@ -35,7 +36,7 @@ public class RepositoryFactory implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        for (Repository repository : repositories) {
+        for (T repository : repositories) {
             log.info("Closing repository: {}", repository.getClass().getName());
             repository.close();
         }

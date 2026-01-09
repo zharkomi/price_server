@@ -1,6 +1,6 @@
-package com.price.stream.event.buffer;
+package com.price.common.storage;
 
-import com.price.stream.common.TraceableEvent;
+import com.price.common.TraceableEvent;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

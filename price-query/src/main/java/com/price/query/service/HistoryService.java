@@ -1,7 +1,7 @@
 package com.price.query.service;
 
-import com.price.query.storage.Candle;
-import com.price.query.storage.Repository;
+import com.price.common.storage.Candle;
+import com.price.common.storage.QueryRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,9 +9,9 @@ import java.util.List;
 @Service
 public class HistoryService {
 
-    private final Repository repository;
+    private final QueryRepository repository;
 
-    public HistoryService(Repository repository) {
+    public HistoryService(QueryRepository repository) {
         this.repository = repository;
     }
 

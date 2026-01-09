@@ -1,10 +1,10 @@
-package com.price.stream.common.config;
+package com.price.common.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.price.stream.common.Util;
-import com.price.stream.market.source.Source;
+import com.price.common.Source;
+import com.price.common.Util;
 
 import java.util.List;
 import java.util.concurrent.atomic.LongAccumulator;

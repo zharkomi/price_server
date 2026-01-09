@@ -1,4 +1,4 @@
-package com.price.stream.common.config;
+package com.price.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -16,9 +16,9 @@ public class FileConfigurationReader {
         this.filePath = filePath;
     }
 
-    public Configuration read() {
+    public PriceConfiguration read() {
         try {
-            return MAPPER.readValue(Path.of(filePath).toFile(), Configuration.class);
+            return MAPPER.readValue(Path.of(filePath).toFile(), PriceConfiguration.class);
         } catch (IOException e) {
             throw new RuntimeException("Failed to read configuration file: " + filePath, e);
         }

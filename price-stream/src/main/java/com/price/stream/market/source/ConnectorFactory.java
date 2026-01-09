@@ -1,7 +1,8 @@
 package com.price.stream.market.source;
 
+import com.price.common.Source;
+import com.price.common.config.Instrument;
 import com.price.stream.market.Connector;
-import com.price.stream.common.config.Instrument;
 
 import java.util.List;
 import java.util.Map;
@@ -12,7 +13,13 @@ public class ConnectorFactory implements AutoCloseable {
 
     public ConnectorFactory(List<Source> sources) {
         this.connectors = sources.stream()
-                .collect(Collectors.toMap(source -> source, Source::createConnector));
+                .collect(Collectors.toMap(source -> source, this::createConnector));
+    }
+
+    private Connector createConnector(Source source) {
+        return switch (source) {
+            case BINANCE -> new BinanceConnector();
+        };
     }
 
     public void start() {
