@@ -1,6 +1,6 @@
-package com.price.common;
+package com.price.common.config;
 
-import com.price.market.Instrument;
+import com.price.common.Util;
 import com.price.market.source.Source;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Configuration {
+public class PropertyConfigurationReader {
 
     public static final String ENV_BUFFER_SIZE = "ps.buffer.size";
     private static final String ENV_INSTRUMENTS = "ps.instruments";
@@ -21,25 +21,23 @@ public class Configuration {
     private static final String INSTRUMENT_DELIMITER = ",";
     private static final String INSTRUMENT_SEPARATOR = "@";
     public static final String DEFAULT_BUFFER_SIZE = "4096";
-    public static final String DEFAULT_REPOSITORY_TYPE = "CLICKHOUSE";
+    public static final String DEFAULT_REPOSITORY_TYPE = "com.price.storage.db.ClickHouseRepository";
     public static final String DEFAULT_HTTP_PORT = "8080";
 
-    public final List<Instrument> instruments;
-    public final List<Source> sources;
-    public final String repositoryType;
-    public final String clickhouseUrl;
-    public final String clickhouseUser;
-    public final String clickhousePassword;
-    public final int httpPort;
-
-    public Configuration() {
-        this.instruments = parseInstruments();
-        this.sources = instruments.stream().map(Instrument::source).distinct().toList();
-        this.repositoryType = System.getenv().getOrDefault(ENV_REPOSITORY_TYPE, DEFAULT_REPOSITORY_TYPE).toUpperCase();
-        this.clickhouseUrl = System.getenv(ENV_CLICKHOUSE_URL);
-        this.clickhouseUser = System.getenv(ENV_CLICKHOUSE_USER);
-        this.clickhousePassword = System.getenv(ENV_CLICKHOUSE_PASSWORD);
-        this.httpPort = Integer.parseInt(System.getenv().getOrDefault(ENV_HTTP_PORT, DEFAULT_HTTP_PORT));
+    public Configuration read() {
+        List<Instrument> instruments = parseInstruments();
+        var db = new DataBase(
+                System.getenv().getOrDefault(ENV_REPOSITORY_TYPE, DEFAULT_REPOSITORY_TYPE),
+                System.getenv(ENV_CLICKHOUSE_URL),
+                System.getenv(ENV_CLICKHOUSE_USER),
+                System.getenv(ENV_CLICKHOUSE_PASSWORD)
+        );
+        return new Configuration(
+                instruments,
+                List.of(db),
+                Integer.parseInt(System.getenv().getOrDefault(ENV_HTTP_PORT, DEFAULT_HTTP_PORT)),
+                NumberUtils.toInt(System.getenv().getOrDefault(ENV_BUFFER_SIZE, DEFAULT_BUFFER_SIZE))
+        );
     }
 
     private List<Instrument> parseInstruments() {
@@ -121,9 +119,5 @@ public class Configuration {
         }
 
         return result;
-    }
-
-    public int getDisruptorBufferSize() {
-        return NumberUtils.toInt(System.getenv().getOrDefault(ENV_BUFFER_SIZE, DEFAULT_BUFFER_SIZE));
     }
 }

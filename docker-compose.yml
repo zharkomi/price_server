@@ -11,14 +11,9 @@ services:
       - "${HTTP_PORT:-8080}:8080"
     volumes:
       - ./run/logs:/app/logs
+      - ./config:/app/config:ro
     environment:
-      - ps.instruments=${ps_instruments}
-      - ps.timeframe.BTCUSDT@BINANCE=${ps_timeframe_BTCUSDT_BINANCE}
-      - ps.timeframe.ETHUSDT@BINANCE=${ps_timeframe_ETHUSDT_BINANCE}
-      - ps.buffer.size=${ps_buffer_size:-4096}
-      - ps.clickhouse.url=${PS_CLICKHOUSE_URL}
-      - ps.clickhouse.user=${PS_CLICKHOUSE_USER:-default}
-      - ps.clickhouse.password=${PS_CLICKHOUSE_PASSWORD:-}
+      - CONFIG_FILE=${CONFIG_FILE:-/app/config/absorber.json}
     restart: unless-stopped
     networks:
       - price-network
@@ -33,8 +28,8 @@ services:
       - "${CLICKHOUSE_HTTP_PORT:-8123}:8123"
       - "${CLICKHOUSE_NATIVE_PORT:-9000}:9000"
     environment:
-      - CLICKHOUSE_USER=${PS_CLICKHOUSE_USER:-default}
-      - CLICKHOUSE_PASSWORD=${PS_CLICKHOUSE_PASSWORD:-}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
       - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
     volumes:
       - ./run/clickhouse:/var/lib/clickhouse

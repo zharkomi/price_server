@@ -1,8 +1,8 @@
 package com.price.service;
 
-import com.price.common.Configuration;
-import com.price.event.CandleEvent;
-import com.price.market.Instrument;
+import com.price.common.config.Configuration;
+import com.price.event.buffer.CandleEvent;
+import com.price.common.config.Instrument;
 import com.price.market.source.Source;
 import com.price.storage.Repository;
 import org.eclipse.jetty.client.HttpClient;
@@ -43,7 +43,7 @@ class HistoryServiceTest {
         // Create a minimal Configuration using reflection
         configuration = createTestConfiguration(testPort);
 
-        historyService = new HistoryService(repository, configuration);
+        historyService = new HistoryService(List.of(repository), configuration);
         historyService.start();
 
         // Give the server a moment to start

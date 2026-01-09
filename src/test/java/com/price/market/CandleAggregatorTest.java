@@ -1,8 +1,9 @@
 package com.price.market;
 
-import com.price.event.MarketDataEvent;
+import com.price.common.config.Instrument;
+import com.price.event.buffer.MarketDataEvent;
 import com.price.market.source.Source;
-import com.price.storage.CandleProcessor;
+import com.price.storage.CandlePersistenceProcessor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +18,7 @@ import static org.mockito.Mockito.*;
 class CandleAggregatorTest {
 
     @Mock
-    private CandleProcessor candleProcessor;
+    private CandlePersistenceProcessor candleProcessor;
 
     private CandleAggregator candleAggregator;
     private static final Instrument INSTRUMENT = new Instrument("BTCUSDT", Source.BINANCE, new int[]{60000});
@@ -25,7 +26,7 @@ class CandleAggregatorTest {
 
     @BeforeEach
     void setUp() {
-        candleAggregator = new CandleAggregator(INSTRUMENT, TIMEFRAME_MS, candleProcessor);
+        candleAggregator = new CandleAggregator(INSTRUMENT, TIMEFRAME_MS, null);
     }
 
     @Test
@@ -216,7 +217,7 @@ class CandleAggregatorTest {
     void testDifferentTimeframePeriods() throws Exception {
         // Test with 5-minute timeframe (300000ms)
         Instrument fiveMinInstrument = new Instrument("BTCUSDT", Source.BINANCE, new int[]{300000});
-        CandleAggregator fiveMinAggregator = new CandleAggregator(fiveMinInstrument, 300000, candleProcessor);
+        CandleAggregator fiveMinAggregator = new CandleAggregator(fiveMinInstrument, 300000, null);
 
         MarketDataEvent event1 = createMarketDataEvent(1000, 100.0, 10);
         MarketDataEvent event2 = createMarketDataEvent(150000, 105.0, 20);

@@ -1,0 +1,24 @@
+{
+  "instruments": [
+    {
+      "name": "BTCUSDT",
+      "source": "BINANCE",
+      "timeframes": ["1m", "5s", "15m", "1h"]
+    },
+    {
+      "name": "ETHUSDT",
+      "source": "BINANCE",
+      "timeframes": ["5s","10s", "5m"]
+    }
+  ],
+  "dataBases": [
+    {
+      "type": "com.price.storage.db.ClickHouseRepository",
+      "url": "jdbc:clickhouse://localhost:8123",
+      "user": "default",
+      "password": "000"
+    }
+  ],
+  "httpPort": 8080,
+  "disruptorBufferSize": 4096
+}

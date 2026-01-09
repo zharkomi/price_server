@@ -1,7 +1,7 @@
 package com.price.market.source;
 
 import com.price.market.Connector;
-import com.price.market.Instrument;
+import com.price.common.config.Instrument;
 
 import java.util.List;
 import java.util.Map;

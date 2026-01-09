@@ -4,21 +4,23 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.price.common.Configuration;
-import com.price.event.CandleEvent;
+import com.price.common.CandleProcessor;
+import com.price.common.SubscriptionKey;
+import com.price.common.config.Configuration;
+import com.price.event.buffer.CandleEvent;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Executors;
 
 @Slf4j
-public class CandleProcessor implements AutoCloseable {
+public class CandlePersistenceProcessor implements CandleProcessor, AutoCloseable {
     private final Disruptor<CandleEvent> disruptor;
     private final RingBuffer<CandleEvent> ringBuffer;
 
-    public CandleProcessor(Repository repository, Configuration configuration) {
+    public CandlePersistenceProcessor(Repository repository, Configuration configuration) {
         disruptor = new Disruptor<>(
                 CandleEvent::new,
-                configuration.getDisruptorBufferSize(),
+                configuration.disruptorBufferSize(),
                 Executors.defaultThreadFactory(),
                 ProducerType.MULTI,
                 new YieldingWaitStrategy()
@@ -35,13 +37,13 @@ public class CandleProcessor implements AutoCloseable {
         log.info("CandleProcessor started");
     }
 
-    public void handleCandleEvent(String instrument, int timeframeMs, long time,
+    public void handleCandleEvent(SubscriptionKey subscriptionKey, long time,
                                   double open, double high, double low, double close, long volume) {
         long sequence = ringBuffer.next();
         try {
             CandleEvent event = ringBuffer.get(sequence);
-            event.instrument(instrument);
-            event.timeframeMs(timeframeMs);
+            event.instrument(subscriptionKey.instrument());
+            event.timeframeMs(subscriptionKey.timeframe());
             event.time(time);
             event.open(open);
             event.high(high);

@@ -1,4 +1,4 @@
-package com.price.event;
+package com.price.event.buffer;
 
 import com.price.common.TraceableEvent;
 import lombok.Getter;

@@ -1,8 +1,8 @@
 package com.price.storage.db;
 
 import com.lmax.disruptor.EventHandler;
-import com.price.common.Configuration;
-import com.price.event.CandleEvent;
+import com.price.common.config.DataBase;
+import com.price.event.buffer.CandleEvent;
 import com.price.storage.Repository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -30,11 +30,11 @@ public class ClickHouseRepository implements Repository, EventHandler<CandleEven
     private final Connection connection;
     private final PreparedStatement insertStatement;
 
-    public ClickHouseRepository(Configuration configuration) {
+    public ClickHouseRepository(DataBase configuration) {
         try {
-            String baseUrl = configuration.clickhouseUrl;
-            String user = configuration.clickhouseUser;
-            String password = configuration.clickhousePassword;
+            String baseUrl = configuration.url();
+            String user = configuration.user();
+            String password = configuration.password();
 
             // Disable compression to avoid LZ4 issues
             String urlParams = baseUrl.contains("?") ? "&compress=0" : "?compress=0";

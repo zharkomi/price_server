@@ -1,6 +1,6 @@
 package com.price.service.dto;
 
-import com.price.market.Instrument;
+import com.price.common.config.Instrument;
 import lombok.Builder;
 import lombok.Getter;
 import org.json.JSONArray;

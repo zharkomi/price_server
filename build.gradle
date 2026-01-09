@@ -21,6 +21,7 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.14.0'
     implementation 'commons-io:commons-io:2.18.0'
     implementation 'org.json:json:20231013'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
 
     // ClickHouse
     implementation 'com.clickhouse:clickhouse-jdbc:0.6.5'
@@ -30,6 +31,9 @@ dependencies {
     // Jetty
     implementation 'org.eclipse.jetty:jetty-server:11.0.24'
     implementation 'org.eclipse.jetty:jetty-servlet:11.0.24'
+
+    // Netty
+    implementation 'io.netty:netty-all:4.1.116.Final'
 
     // Logging
     implementation 'org.apache.logging.log4j:log4j-api:2.24.3'

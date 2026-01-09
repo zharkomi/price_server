@@ -1,7 +1,7 @@
 package com.price.storage;
 
 import com.lmax.disruptor.EventHandler;
-import com.price.event.CandleEvent;
+import com.price.event.buffer.CandleEvent;
 
 import java.util.List;
 

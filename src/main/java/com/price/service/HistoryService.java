@@ -1,8 +1,8 @@
 package com.price.service;
 
-import com.price.common.Configuration;
 import com.price.common.Util;
-import com.price.event.CandleEvent;
+import com.price.common.config.Configuration;
+import com.price.event.buffer.CandleEvent;
 import com.price.service.dto.HealthResponse;
 import com.price.service.dto.HistoryRequest;
 import com.price.service.dto.HistoryResponse;
@@ -21,22 +21,22 @@ import java.util.List;
 
 @Slf4j
 public class HistoryService implements AutoCloseable {
-    private final Repository repository;
+    private final List<Repository> repositories;
     private final Configuration configuration;
     private final Server server;
 
-    public HistoryService(Repository repository, Configuration configuration) {
-        this.repository = repository;
+    public HistoryService(List<Repository> repositories, Configuration configuration) {
+        this.repositories = repositories;
         this.configuration = configuration;
-        this.server = new Server(configuration.httpPort);
+        this.server = new Server(configuration.httpPort());
         this.server.setHandler(new HistoryHandler());
-        log.info("Jetty server created on port {}", configuration.httpPort);
+        log.info("Jetty server created on port {}", configuration.httpPort());
     }
 
     public void start() {
         try {
             server.start();
-            log.info("HistoryService HTTP server started on port {}", configuration.httpPort);
+            log.info("HistoryService HTTP server started on port {}", configuration.httpPort());
         } catch (Exception e) {
             throw new RuntimeException("Failed to start Jetty server", e);
         }
@@ -49,7 +49,7 @@ public class HistoryService implements AutoCloseable {
 
             try {
                 switch (target) {
-                    case "/history" -> handleHistory(request, response);
+                    case "/history" -> handleHistory(request, response, repositories.get(0));
                     case "/health" -> handleHealth(response);
                     default -> sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND, "Not found");
                 }
@@ -62,7 +62,7 @@ public class HistoryService implements AutoCloseable {
         }
 
         private void handleHealth(HttpServletResponse response) throws IOException {
-            List<InstrumentInfo> instrumentInfos = configuration.instruments.stream()
+            List<InstrumentInfo> instrumentInfos = configuration.instruments().stream()
                     .map(InstrumentInfo::from)
                     .toList();
 
@@ -77,7 +77,7 @@ public class HistoryService implements AutoCloseable {
             log.debug("Health check request handled");
         }
 
-        private void handleHistory(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        private void handleHistory(HttpServletRequest request, HttpServletResponse response, Repository repository) throws Exception {
             try {
                 // Parse and validate request
                 HistoryRequest historyRequest = parseAndValidateRequest(request);

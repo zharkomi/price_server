@@ -565,7 +565,7 @@ Logging is configured via `src/main/resources/log4j2.xml`. By default:
 - Implement manual event parsing for Binance
 - Add option to get time from message payload instead of local system time
 - Implement online subscription via WebSocket API
-- Add file-based configuration option
+- ~~Add file-based configuration option~~
 - Testing: 
   - Enhance unit tests
   - Add integration tests with mocks
