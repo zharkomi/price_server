@@ -1,4 +1,4 @@
-CREATE TABLE trade_candles
+CREATE TABLE prices_db.trade_candles
 (
     instrument       LowCardinality(String),
     timeframe_ms     UInt32,
