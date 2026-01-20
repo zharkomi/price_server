@@ -8,7 +8,10 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,16 +21,23 @@ public class ClickHouseRepository implements QueryRepository {
     private static final String DATABASE_NAME = "prices_db";
 
     public static final String QUERY_SELECT_CANDLES = "SELECT time, open, high, low, close, volume " +
-            "FROM trade_candles " +
-            "WHERE instrument = ? AND timeframe_ms = ? AND time >= ? AND time < ? " +
+            "FROM " + DATABASE_NAME + ".trade_candles " +
+            "WHERE instrument = ? AND timeframe_ms = ? " +
+            "  AND time >= ? " +
+            "  AND time < ? " +
             "ORDER BY time ASC";
 
     private final HikariDataSource dataSource;
+
     public ClickHouseRepository(DataBase dataBase) {
         log.info("ClickHouseRepository configured for database: {}", DATABASE_NAME);
 
+        // Append database name to URL (same pattern as price-stream)
+        String baseUrl = dataBase.url();
+        String dbUrl = baseUrl + "/" + DATABASE_NAME;
+
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(dataBase.url());
+        config.setJdbcUrl(dbUrl);
         config.setUsername(dataBase.user());
         config.setPassword(dataBase.password());
         config.setDriverClassName("com.clickhouse.jdbc.ClickHouseDriver");

@@ -45,6 +45,7 @@ application {
 }
 
 tasks.register('fatJar', Jar) {
+    dependsOn ':price-common:jar'
     archiveClassifier = 'all'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {

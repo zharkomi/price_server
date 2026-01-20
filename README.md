@@ -75,25 +75,19 @@ The project is split into modules:
 
 ### Docker Multi-Stage Build
 
-Both `price-stream` and `price-query` use identical 3-stage Docker builds optimized for production:
+Both `price-stream` and `price-query` use 2-stage Docker builds with BuildKit cache mounts:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│  Stage 1: DEPENDENCIES (eclipse-temurin:21-jdk-jammy)                   │
+│  Stage 1: BUILDER (eclipse-temurin:21-jdk-jammy)                        │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │  • Copy Gradle wrapper and build files                            │  │
-│  │  • Run: ./gradlew dependencies                                    │  │
-│  │  • Result: Cached layer with all dependencies (~500MB)            │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│                                    ↓                                    │
-│  Stage 2: BUILDER (extends dependencies)                                │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │  • Copy source code                                               │  │
+│  │  • Copy Gradle wrapper, build files, and source code              │  │
+│  │  • BuildKit cache mount: /root/.gradle persists between builds    │  │
 │  │  • Run: ./gradlew fatJar (stream) or bootJar (query)              │  │
 │  │  • Result: Compiled application JAR                               │  │
 │  └───────────────────────────────────────────────────────────────────┘  │
 │                                    ↓                                    │
-│  Stage 3: RUNTIME (eclipse-temurin:21-jre-jammy)                        │
+│  Stage 2: RUNTIME (eclipse-temurin:21-jre-jammy)                        │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
 │  │  • Copy only the JAR from builder                                 │  │
 │  │  • JRE-only base image (no JDK, no build tools)                   │  │
@@ -103,12 +97,32 @@ Both `price-stream` and `price-query` use identical 3-stage Docker builds optimi
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+**Gradle Cache with BuildKit:**
+
+The Dockerfiles use BuildKit cache mounts to persist Gradle dependencies between builds:
+
+```dockerfile
+RUN --mount=type=cache,id=gradle-price-stream,target=/root/.gradle \
+    ./gradlew :price-stream:fatJar --no-daemon
+```
+
+| Feature | Description |
+|---------|-------------|
+| **Persistent cache** | Gradle downloads stored in BuildKit's internal storage |
+| **Survives rebuilds** | Dependencies not re-downloaded on code changes |
+| **Isolated per module** | Separate cache IDs prevent parallel build conflicts |
+| **Zero image bloat** | Cache not copied into final image |
+
+Cache location: `/var/lib/docker/buildkit/` (managed by Docker)
+
+To clear the cache: `docker builder prune`
+
 **Benefits:**
 
 | Benefit | Description |
 |---------|-------------|
 | **Smaller images** | ~300MB final image vs 1GB+ with full JDK |
-| **Faster rebuilds** | Dependencies layer is cached; only source changes trigger rebuild |
+| **Faster rebuilds** | Gradle cache persists; only changed code recompiles |
 | **Security** | No build tools, compilers, or source code in production image |
 | **Container-aware JVM** | Uses `-XX:+UseContainerSupport` and `-XX:MaxRAMPercentage=75.0` |
 

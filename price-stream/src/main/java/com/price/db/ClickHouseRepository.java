@@ -17,7 +17,7 @@ public class ClickHouseRepository implements SaveRepository, EventHandler<Candle
     private static final String SCHEMA_RESOURCE = "/clickhouse/schema.sql";
 
     public static final String QUERY_CREATE_DB = "CREATE DATABASE " + DATABASE_NAME;
-    public static final String QUERY_INSERT_PRICES = "INSERT INTO trade_candles " +
+    public static final String QUERY_INSERT_PRICES = "INSERT INTO " + DATABASE_NAME + ".trade_candles " +
             "(instrument, timeframe_ms, time, open, high, low, close, volume) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -126,7 +126,6 @@ public class ClickHouseRepository implements SaveRepository, EventHandler<Candle
             throw e;
         }
     }
-
 
 
     @Override

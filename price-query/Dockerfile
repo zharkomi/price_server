@@ -1,7 +1,8 @@
+# syntax=docker/dockerfile:1
 # Multi-stage build for Market Price Server
 
-# Stage 1: Download dependencies
-FROM eclipse-temurin:21-jdk-jammy AS dependencies
+# Stage 1: Build
+FROM eclipse-temurin:21-jdk-jammy AS builder
 
 WORKDIR /app
 
@@ -11,18 +12,15 @@ COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
 COPY gradle/libs.versions.toml gradle/libs.versions.toml
+COPY price-common/build.gradle price-common/build.gradle
+COPY price-common/src price-common/src
 COPY price-query/build.gradle price-query/build.gradle
 COPY price-query/src price-query/src
 
-
-# Download dependencies (cached layer)
-RUN ./gradlew :price-query:dependencies --no-daemon
-
-# Stage 2: Build with sources
-FROM dependencies AS builder
-
-# Build the application with Spring Boot JAR
-RUN ./gradlew :price-query:bootJar --no-daemon
+# Build the application with Spring Boot JAR (Gradle cache persisted between builds)
+RUN --mount=type=cache,id=gradle-price-query,target=/root/.gradle \
+    find /root/.gradle -name "*.lock" -delete 2>/dev/null || true && \
+    ./gradlew :price-query:bootJar --no-daemon
 
 # Stage 3: Runtime with JRE only
 FROM eclipse-temurin:21-jre-jammy
