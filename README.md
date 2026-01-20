@@ -1,180 +1,30 @@
 # Price Server
 
-A high-performance Java market data aggregation server that collects real-time cryptocurrency price data from exchanges and aggregates it into OHLCV (Open, High, Low, Close, Volume) candles at configurable timeframes.
+A high-performance Java 21 market data aggregation system that collects real-time cryptocurrency price data from exchanges and aggregates it into OHLCV (Open, High, Low, Close, Volume) candles at configurable timeframes.
 
-## Table of Contents
+## Project Structure
 
-- [Description](#description)
-  - [Key Features](#key-features)
-  - [Architecture](#architecture)
-- [Configuration](#configuration)
-  - [Required Variables](#required-variables)
-  - [Optional Variables](#optional-variables)
-- [Storage Layer](#storage-layer)
-  - [Why ClickHouse](#why-clickhouse)
-  - [Schema](#schema)
-  - [Features](#features)
-  - [Performance](#performance)
-  - [Alternative Storage Backends](#alternative-storage-backends)
-- [How to Start](#how-to-start)
-  - [Docker Management Commands](#docker-management-commands)
-  - [Docker Architecture](#docker-architecture)
-- [REST API](#rest-api)
-  - [Endpoints](#endpoints)
-  - [API Features](#api-features)
-  - [Configuration Example](#configuration-example)
-- [Visualization Tools](#visualization-tools)
-  - [History Plotter Script](#history-plotter-script)
-- [Development](#development)
-  - [Local Development Build and Run](#local-development-build-and-run)
-  - [Build Tasks](#build-tasks)
-  - [Log Configuration](#log-configuration)
-- [TODO](#todo)
+The project is split into modules:
 
-## Description
+| Module | Description |
+|--------|-------------|
+| [price-common](./price-common/README.md) | Shared library with configuration, interfaces, and data models |
+| [price-stream](./price-stream/README.md) | Real-time streaming server - WebSocket listener, aggregation, storage |
+| [price-query](./price-query/README.md) | REST API service for historical data queries |
+| [scripts](./scripts/README.md) | Python utility scripts for testing and visualization |
 
-This server connects to cryptocurrency exchanges via WebSocket to receive real-time market data, then aggregates tick-level price updates into time-based candles (1m, 5m, 1h, etc.). The system is designed for low-latency event processing using the LMAX Disruptor framework for lock-free concurrent data structures.
+## Key Features
 
-### Key Features
-
-- **Real-time data collection** from cryptocurrency exchanges (currently supports Binance)
-- **Multi-timeframe aggregation** - configure multiple timeframes per instrument (e.g., 1m, 5m, 15m, 1h candles)
+- **Real-time data collection** from cryptocurrency exchanges (Binance)
+- **Multi-timeframe aggregation** - configure multiple timeframes per instrument
 - **High-performance architecture** using LMAX Disruptor for lock-free event processing
-- **Dual-buffer architecture** - segregated input and output buffers isolate market data processing from storage operations
-- **ClickHouse storage** - high-performance columnar database for time-series data with automatic schema management
-- **REST API** - HTTP endpoints for querying historical candle data with JSON responses
-- **Non-drifting timer** ensures candles are emitted at exact intervals even during low-volume periods
-- **Multiple instrument support** - monitor multiple trading pairs simultaneously
+- **WebSocket streaming** - subscribe to real-time candle updates via Netty WebSocket
+- **REST API** - query historical OHLCV data with Spring Boot
+- **ClickHouse storage** - high-performance columnar database for time-series data
 
-### Architecture
+## Quick Start
 
-The system uses a multilayer architecture with segregated input and output buffers for optimal performance and decoupling:
-
-**Layer 1: Input Processing (per instrument)**
-- WebSocket connectors receive market data and publish events
-- Each `MarketDataProcessor` instance has its own Disruptor ring buffer (input layer)
-- Chain of `CandleAggregator` handlers aggregate data into OHLCV candles for each timeframe
-- Multiple producers (connectors) → Multiple input ring buffers (one per instrument)
-
-**Layer 2: Output Processing (shared storage layer)**
-- `CandleProcessor` acts as a bridge with a separate Disruptor ring buffer (output layer)
-- Aggregators from all instruments publish completed candles to this shared buffer
-- Single multi-producer ring buffer → Single consumer (repository)
-- This segregation prevents storage operations from blocking market data processing
-
-**Benefits of Dual-Buffer Architecture:**
-- Input buffers handle high-frequency market data without storage latency
-- Output buffer batches writes to storage efficiently
-- Complete isolation between real-time processing and persistence
-- Storage backpressure doesn't affect market data ingestion
-
-## Configuration
-
-All configuration is done through environment variables:
-
-### Required Variables
-
-- **`ps.instruments`** - Comma-separated list of instruments to monitor
-  - Format: `SYMBOL@SOURCE` (e.g., `BTCUSDT@BINANCE,ETHUSDT@BINANCE`)
-  - Each instrument must have a corresponding timeframe configuration
-
-- **`ps.timeframe.{SYMBOL}@{SOURCE}`** - Timeframes for each instrument
-  - Format: Comma-separated list of timeframes
-  - Timeframe syntax: `<number><unit>` where unit is:
-    - `s` = seconds
-    - `m` = minutes
-    - `h` = hours
-    - `d` = days
-  - Example: `ps.timeframe.BTCUSDT@BINANCE=1m,5m,15m,1h`
-
-### Optional Variables
-
-- **`ps.buffer.size`** - LMAX Disruptor ring buffer size (default: 4096)
-  - Must be a power of 2 (e.g., 1024, 2048, 4096, 8192)
-  - Larger buffers can handle higher throughput but use more memory
-
-- **`ps.clickhouse.url`** - ClickHouse JDBC URL (default: `jdbc:clickhouse://localhost:8123`)
-  - Format: `jdbc:clickhouse://<host>:<port>`
-
-- **`ps.clickhouse.user`** - ClickHouse username (default: `default`)
-
-- **`ps.clickhouse.password`** - ClickHouse password (default: empty string)
-
-## Storage Layer
-
-The server uses ClickHouse as its primary storage backend for historical candle data. ClickHouse is a high-performance columnar database optimized for time-series analytics and OLAP workloads.
-
-### Why ClickHouse
-
-- **Columnar storage** - 100x faster than row-based databases for analytical queries
-- **Compression** - up to 10x data compression reduces storage costs
-- **Partitioning** - automatic data partitioning by date for efficient queries and data management
-- **Scalability** - handles billions of rows with sub-second query performance
-- **ReplacingMergeTree** - automatic deduplication of candles if the same data is inserted multiple times
-
-### Schema
-
-**Database**: `prices_db` (automatically created on first run)
-
-**Table**: `trade_candles` with the following schema:
-
-```sql
-CREATE TABLE trade_candles
-(
-    instrument       LowCardinality(String),  -- Trading pair (e.g., "BTCUSDT@BINANCE")
-    timeframe_ms     UInt32,                   -- Timeframe in milliseconds
-    time             UInt64,                   -- Candle timestamp (Unix epoch in ms)
-    open             Float64,                  -- Opening price
-    high             Float64,                  -- Highest price
-    low              Float64,                  -- Lowest price
-    close            Float64,                  -- Closing price
-    volume           Float64                   -- Trading volume
-)
-ENGINE = ReplacingMergeTree()
-PARTITION BY (instrument, timeframe_ms, toDate(time / 1000))
-ORDER BY (instrument, timeframe_ms, time)
-SETTINGS index_granularity = 8192;
-```
-
-**Schema Details**:
-- **LowCardinality(String)** for instrument - optimizes storage and queries for repeated string values
-- **ReplacingMergeTree engine** - automatically deduplicates rows with the same ORDER BY key
-- **Partitioning** by (instrument, timeframe, date) - enables efficient data pruning and management
-- **ORDER BY** (instrument, timeframe_ms, time) - creates primary index for fast range queries
-- **index_granularity** of 8192 - balances index size vs. query performance
-
-### Features
-
-- **Automatic schema initialization** - database and tables are created automatically on first run
-- **Batch insertion** - candles are batched for efficient writes using Disruptor's end-of-batch detection
-- **Deduplication** - ReplacingMergeTree engine prevents duplicate candles
-- **Partitioning** - data partitioned by instrument, timeframe, and date for efficient queries
-- **Compression** - automatic columnar compression reduces storage by ~90%
-- **Fast queries** - primary index enables sub-second queries even with billions of rows
-
-### Performance
-
-The dual-buffer architecture ensures:
-- **Write throughput**: 100K+ candles/second sustained
-- **Query latency**: Sub-100ms for typical date range queries
-- **No blocking**: Storage operations never block market data processing
-- **Batch efficiency**: Disruptor's end-of-batch detection minimizes database round-trips
-
-### Alternative Storage Backends
-
-The system uses a `Repository` interface that can be implemented for other storage systems:
-- **Default**: `ClickHouseRepository` (JDBC-based, high-performance)
-- **Future options**: PostgreSQL with TimescaleDB, Apache Druid, S3 (Parquet), etc.
-
-To add a new repository:
-1. Implement the `Repository` interface (extends `EventHandler<CandleEvent>`)
-2. Add new repository class (e.g., `PostgresRepository`)
-3. Update `RepositoryFactory` to support the new type
-4. Add configuration variables for the new backend
-
-## How to Start
-
-The easiest way to run the server is using Docker Compose, which automatically sets up both the price server and ClickHouse database.
+### Using Docker Compose (Recommended)
 
 1. **Clone the repository**
    ```bash
@@ -182,391 +32,200 @@ The easiest way to run the server is using Docker Compose, which automatically s
    cd price_server
    ```
 
-2. **Build and start the services**
+2. **Configure instruments** in `config/config.json`:
+   ```json
+   {
+     "instruments": [
+       {"name": "BTCUSDT", "source": "BINANCE", "timeframes": ["1m", "5m", "1h"]}
+     ],
+     "dataBases": [
+       {"type": "com.price.db.ClickHouseRepository", "url": "jdbc:clickhouse://clickhouse:8123", "user": "default", "password": ""}
+     ],
+     "httpPort": 8080,
+     "disruptorBufferSize": 4096
+   }
+   ```
+
+3. **Start services**
    ```bash
    docker compose up --build -d
    ```
 
-   This command will:
-   - Build the Docker image
-   - Start ClickHouse database
-   - Wait for ClickHouse to be healthy
-   - Start the price server
-   - Run both services in detached mode
-
-3. **Verify the services are running**
+4. **Verify**
    ```bash
-   # Check service status
+   # Check services
    docker compose ps
 
-   # View logs (follow mode)
-   docker compose logs -f
-
-   # View logs for specific service
-   docker compose logs -f price-server
-
-   # Test the API
-   curl "http://localhost:8080/health"
+   # Query historical data
+   curl "http://localhost:8080/history?symbol=BTCUSDT@BINANCE&interval=1m&from=1735516800&to=1735520400"
    ```
 
-4. **Shutdown**
+5. **Stop**
    ```bash
-   # Stop and remove containers
    docker compose down
    ```
 
-   The shutdown process will:
-   - Gracefully stop the price server
-   - Close all WebSocket connections
-   - Flush remaining candles
-   - Stop all processors and timers
-   - Stop ClickHouse database
-   - Remove containers (volumes are preserved)
+### Docker Services
 
-### Docker Management Commands
+| Service | Port | Description |
+|---------|------|-------------|
+| price-query | 8080 | REST API for historical queries |
+| price-stream | 8081 | WebSocket streaming (httpPort + 1) |
+| clickhouse | 8123, 9000 | ClickHouse HTTP and native ports |
 
-Common Docker Compose commands for managing the application stack:
+### Docker Multi-Stage Build
 
-```bash
-# Build and start services in detached mode
-docker compose up --build -d
+Both `price-stream` and `price-query` use identical 3-stage Docker builds optimized for production:
 
-# Stop and remove containers (preserves volumes)
-docker compose down
-
-# Stop and remove everything including volumes
-docker compose down -v
-
-# Restart services
-docker compose restart
-
-# View logs (follow mode)
-docker compose logs -f
-
-# View logs for specific service
-docker compose logs -f price-server
-docker compose logs -f clickhouse
-
-# Show running services
-docker compose ps
-
-# Rebuild images without starting
-docker compose build
-
-# Stop services without removing containers
-docker compose stop
-
-# Start stopped services
-docker compose start
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Stage 1: DEPENDENCIES (eclipse-temurin:21-jdk-jammy)                   │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │  • Copy Gradle wrapper and build files                            │  │
+│  │  • Run: ./gradlew dependencies                                    │  │
+│  │  • Result: Cached layer with all dependencies (~500MB)            │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│                                    ↓                                    │
+│  Stage 2: BUILDER (extends dependencies)                                │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │  • Copy source code                                               │  │
+│  │  • Run: ./gradlew fatJar (stream) or bootJar (query)              │  │
+│  │  • Result: Compiled application JAR                               │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+│                                    ↓                                    │
+│  Stage 3: RUNTIME (eclipse-temurin:21-jre-jammy)                        │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │  • Copy only the JAR from builder                                 │  │
+│  │  • JRE-only base image (no JDK, no build tools)                   │  │
+│  │  • Optimized JVM flags for containers                             │  │
+│  │  • Final image size: ~300MB                                       │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Docker Architecture
+**Benefits:**
 
-The Docker setup uses a **multi-stage build** for optimal image size and security:
+| Benefit | Description |
+|---------|-------------|
+| **Smaller images** | ~300MB final image vs 1GB+ with full JDK |
+| **Faster rebuilds** | Dependencies layer is cached; only source changes trigger rebuild |
+| **Security** | No build tools, compilers, or source code in production image |
+| **Container-aware JVM** | Uses `-XX:+UseContainerSupport` and `-XX:MaxRAMPercentage=75.0` |
 
-**Docker Layers:**
-
-1. **Dependencies** (`eclipse-temurin:21-jdk-jammy`)
-   - Downloads Gradle dependencies
-   - Cached layer for faster rebuilds
-
-2. **Builder** (extends dependencies stage)
-   - Copies source code
-   - Builds fat JAR with all dependencies
-
-3. **Runtime** (`eclipse-temurin:21-jre-jammy`)
-   - JRE-only base image (smaller, more secure)
-   - Copies only the built JAR
-   - Exposes port 8080
-   - Final image size: ~300MB (vs 1GB+ for full JDK)
-
-**Docker Compose Services:**
-- **price-server**
-   - Built from local Dockerfile
-   - Exposes configurable HTTP port (default: 8080)
-   - Mounts `./run/logs` for log persistence
-   - Auto-restarts unless stopped manually
-   - Waits for ClickHouse to be healthy before starting
-
-- **clickhouse**
-   - Official ClickHouse image
-   - Exposes HTTP (8120) and native (9001) ports
-   - Persists data in `./run/clickhouse` volume
-   - Health check ensures database is ready
-   - Separate volume for logs
-
-**Networking:**
-- Services communicate via `price-network` bridge network
-- Price server connects to ClickHouse using hostname `clickhouse`
-- External access via mapped ports on localhost
-
-**Data Persistence:**
-- `./run/logs` - Price server application logs and GC logs
-  - Application logs (INFO level with rolling file appender)
-  - GC logs in `gc/` subdirectory (5 files × 10MB rotation)
-  - Heap dumps on OutOfMemoryError
-- `./run/clickhouse` - ClickHouse database files
-- `clickhouse-logs` - ClickHouse server logs (Docker volume)
-
-## REST API
-
-The server exposes a REST API for querying historical candle data via the `HistoryService` component.
-
-### Endpoints
-
-#### GET /history
-
-Retrieve historical OHLCV candles for a specific instrument and timeframe.
-
-**Query Parameters:**
-- `symbol` (required) - Trading pair symbol (e.g., "BTCUSDT@BINANCE")
-- `interval` (required) - Timeframe interval (e.g., "1m", "5m", "1h")
-- `from` (required) - Start timestamp in seconds (Unix epoch)
-- `to` (required) - End timestamp in seconds (Unix epoch)
-
-**Example Request:**
-```bash
-curl "http://localhost:8080/history?symbol=BTCUSDT@BINANCE&interval=1m&from=1735516800&to=1735520400"
+**JVM Configuration:**
+```
+-Xms500m -Xmx1g                      # Initial/max heap
+-XX:+UseContainerSupport             # Respect container memory limits
+-XX:MaxRAMPercentage=75.0            # Use 75% of container memory
+-XX:+HeapDumpOnOutOfMemoryError      # Dump heap on OOM
+-Xlog:gc*:file=/app/logs/gc.log      # GC logging with rotation
 ```
 
-**Success Response (200 OK):**
+## Configuration
+
+Configuration can be provided via JSON file or environment variables.
+
+### JSON File Configuration
+
+Set `CONFIG_FILE` environment variable to point to your config file:
+
 ```json
 {
-  "success": true,
-  "error": null,
-  "times": [1735516800, 1735516860, 1735516920],
-  "opens": [42000.5, 42010.2, 42005.8],
-  "highs": [42050.0, 42030.5, 42020.0],
-  "lows": [41990.0, 42000.0, 41995.5],
-  "closes": [42010.2, 42005.8, 42015.3],
-  "volumes": [150000, 125000, 135000]
-}
-```
-
-**Error Response (4xx/5xx):**
-```json
-{
-  "success": false,
-  "error": "Missing required parameters: symbol, interval, from, to",
-  "times": [],
-  "opens": [],
-  "highs": [],
-  "lows": [],
-  "closes": [],
-  "volumes": []
-}
-```
-
-#### GET /health
-
-Health check endpoint for service monitoring. Returns detailed information about all configured instruments including their configuration and runtime statistics.
-
-**Example Request:**
-```bash
-curl "http://localhost:8080/health"
-```
-
-**Response (200 OK):**
-```json
-{
-  "status": "ok",
-  "service": "HistoryService",
-  "timestamp": 1735516800000,
   "instruments": [
+    {"name": "BTCUSDT", "source": "BINANCE", "timeframes": ["1m", "5m", "15m", "1h"]},
+    {"name": "ETHUSDT", "source": "BINANCE", "timeframes": ["5m", "1h"]}
+  ],
+  "dataBases": [
     {
-      "name": "BTCUSDT",
-      "source": "BINANCE",
-      "fullName": "BTCUSDT@BINANCE",
-      "timeframes": [60000, 300000, 900000],
-      "marketEvents": 125847,
-      "candleEvents": 384
-    },
-    {
-      "name": "ETHUSDT",
-      "source": "BINANCE",
-      "fullName": "ETHUSDT@BINANCE",
-      "timeframes": [60000, 300000],
-      "marketEvents": 98234,
-      "candleEvents": 256
+      "type": "com.price.db.ClickHouseRepository",
+      "url": "jdbc:clickhouse://localhost:8123",
+      "user": "default",
+      "password": ""
     }
-  ]
+  ],
+  "httpPort": 8080,
+  "disruptorBufferSize": 4096
 }
 ```
 
-**Response Fields:**
-- `status` - Service status ("ok")
-- `service` - Service name ("HistoryService")
-- `timestamp` - Current timestamp in milliseconds (Unix epoch)
-- `instruments` - Array of configured instruments with:
-  - `name` - Instrument symbol (e.g., "BTCUSDT")
-  - `source` - Exchange name (e.g., "BINANCE")
-  - `fullName` - Full instrument identifier (e.g., "BTCUSDT@BINANCE")
-  - `timeframes` - Array of configured timeframes in milliseconds
-  - `marketEvents` - Total number of market data events processed
-  - `candleEvents` - Total number of candles generated
+### Environment Variables
 
-### API Features
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CONFIG_FILE` | Path to JSON config file | - |
+| `ps.instruments` | Comma-separated instruments (e.g., `BTCUSDT@BINANCE`) | - |
+| `ps.timeframe.{SYMBOL}@{SOURCE}` | Timeframes for instrument (e.g., `1m,5m,1h`) | - |
+| `ps.buffer.size` | Disruptor ring buffer size (power of 2) | 4096 |
+| `ps.http.port` | HTTP server port | 8080 |
+| `ps.clickhouse.url` | ClickHouse JDBC URL | `jdbc:clickhouse://localhost:8123` |
+| `ps.clickhouse.user` | ClickHouse username | `default` |
+| `ps.clickhouse.password` | ClickHouse password | `` |
+| `ps.repository.type` | Repository class name | `com.price.db.ClickHouseRepository` |
 
-- **REST over HTTP** - simple HTTP GET requests, no authentication required
-- **JSON responses** - standardized response format with success/error indicators
-- **Input validation** - comprehensive parameter validation with descriptive error messages
-- **Embedded Jetty server** - runs on port 8080 (default)
-- **Array-based OHLCV format** - efficient columnar data structure for charting libraries
+### Timeframe Format
 
-### Configuration Example
+Timeframes use format `<number><unit>`:
+- `s` - seconds (e.g., `5s`, `30s`)
+- `m` - minutes (e.g., `1m`, `5m`, `15m`)
+- `h` - hours (e.g., `1h`, `4h`)
+- `d` - days (e.g., `1d`)
 
-```bash
-# Monitor BTC and ETH on Binance
-export ps.instruments="BTCUSDT@BINANCE,ETHUSDT@BINANCE"
+## Storage Layer
 
-# Configure timeframes for each instrument
-export ps.timeframe.BTCUSDT@BINANCE="1m,5m,15m,1h,4h"
-export ps.timeframe.ETHUSDT@BINANCE="1m,5m,1h"
+### ClickHouse Schema
 
-# Optional: increase buffer size for higher throughput
-export ps.buffer.size=8192
+```sql
+CREATE TABLE trade_candles (
+    instrument       LowCardinality(String),  -- "BTCUSDT@BINANCE"
+    timeframe_ms     UInt32,                   -- Timeframe in milliseconds
+    time             UInt64,                   -- Unix epoch in ms
+    open             Float64,
+    high             Float64,
+    low              Float64,
+    close            Float64,
+    volume           Float64
+)
+ENGINE = ReplacingMergeTree()
+PARTITION BY (instrument, timeframe_ms, toDate(time / 1000))
+ORDER BY (instrument, timeframe_ms, time)
 ```
-
-## Visualization Tools
-
-### History Plotter Script
-
-The repository includes a Python script (`scripts/plot_history.py`) for fetching and visualizing historical candle data with a GUI interface.
-
-**Features:**
-- Graphical candlestick chart with OHLC data
-- Volume bar chart
-- Green/red candles for bullish/bearish moves
-- Grid lines and axis labels
-- Statistics panel with first/last candle info
-- Uses only built-in Python libraries (tkinter)
-
-**Requirements:**
-- Python 3 with tkinter (included by default on most systems)
-
-**Command-Line Parameters:**
-
-| Parameter | Required | Description | Example |
-|-----------|----------|-------------|---------|
-| `--instrument` | Yes | Trading pair symbol | `BTCUSDT@BINANCE` |
-| `--timeframe` | Yes | Candle interval | `1m`, `5m`, `1h` |
-| `--start` | Conditional* | Start timestamp (Unix epoch in seconds) | `1735516800` |
-| `--end` | No | End timestamp (Unix epoch in seconds), defaults to now | `1735520400` |
-| `--last` | Conditional* | Fetch last N bars from now | `100` |
-| `--host` | No | Price server hostname (default: `localhost`) | `localhost` |
-| `--port` | No | Price server port (default: `8080`) | `8080` |
-
-\* Either `--start` or `--last` must be provided, but not both.
-
-**Examples:**
-
-```bash
-# Plot last 50 1-minute candles
-python3 scripts/plot_history.py --instrument BTCUSDT@BINANCE --timeframe 1m --last 50
-
-# Plot last 24 hourly candles
-python3 scripts/plot_history.py --instrument ETHUSDT@BINANCE --timeframe 1h --last 24
-
-# Plot 5-minute candles for specific date range
-python3 scripts/plot_history.py --instrument BTCUSDT@BINANCE --timeframe 5m --start 1735516800 --end 1735520400
-
-# Connect to remote server
-python3 scripts/plot_history.py --instrument BTCUSDT@BINANCE --timeframe 1m --last 100 --host 192.168.1.100 --port 8080
-```
-
-**Output:**
-- Opens a GUI window (1200x800) with interactive candlestick chart
-- Prints data statistics to console (time range, price range, volume)
 
 ## Development
 
-### Local Development Build and Run
+### Build Commands
 
-For development without Docker:
+```bash
+# Build all modules
+./gradlew build
 
-1. **Start ClickHouse** (if not using Docker Compose)
+# Build specific module
+./gradlew :price-stream:build
+./gradlew :price-query:build
+
+# Run tests
+./gradlew test
+
+# Create fat JAR
+./gradlew :price-stream:fatJar
+./gradlew :price-query:bootJar
+
+# Clean
+./gradlew clean
+```
+
+### Local Development
+
+1. **Start ClickHouse**
    ```bash
    docker run -d -p 8123:8123 --name clickhouse clickhouse/clickhouse-server
    ```
 
-2. **Configure environment variables**
+2. **Run Stream Server**
    ```bash
-   # Set up your instruments and timeframes
-   export ps.instruments="BTCUSDT@BINANCE"
-   export ps.timeframe.BTCUSDT@BINANCE="1m,5m,15m"
-   export ps.clickhouse.url="jdbc:clickhouse://localhost:8123"
+   CONFIG_FILE=config/config.json ./gradlew :price-stream:run
    ```
 
-3. **Build the project**
+3. **Run Query Server**
    ```bash
-   ./gradlew build
+   ./gradlew :price-query:bootRun
    ```
-
-4. **Run the server**
-   ```bash
-   ./gradlew run
-   ```
-
-5. **Shutdown**
-
-   Press `Ctrl+C` to gracefully shutdown the server. The shutdown hook will:
-   - Close all WebSocket connections
-   - Flush remaining candles
-   - Stop all processors and timers
-
-#### Alternative: Run with inline configuration
-
-```bash
-ps.instruments="BTCUSDT@BINANCE,ETHUSDT@BINANCE" \
-ps.timeframe.BTCUSDT@BINANCE="1m,5m,1h" \
-ps.timeframe.ETHUSDT@BINANCE="1m,5m" \
-./gradlew run
-```
-
-#### Verify Operation
-
-The server will log its startup sequence and market data processing. Look for:
-- "Starting market data server..." at startup
-- WebSocket connection messages for each exchange
-- Market data events being processed (if logging level is set appropriately)
-
-**Testing the API:**
-```bash
-# Health check
-curl "http://localhost:8080/health"
-
-# Query historical data (adjust timestamps as needed)
-curl "http://localhost:8080/history?symbol=BTCUSDT@BINANCE&interval=1m&from=1735516800&to=1735520400"
-```
-
-### Build Tasks
-
-```bash
-# Clean build artifacts
-./gradlew clean
-
-# Compile without running
-./gradlew build
-
-# Run tests (when available)
-./gradlew test
-```
-
-### Log Configuration
-
-Logging is configured via `src/main/resources/log4j2.xml`. By default:
-- Console output at INFO level
-- Rolling file logs in `logs/` directory
-- Separate rolling file for errors
-
-
-## TODO
-- Add connection pooling to Clickhouse repository
-- Implement manual event parsing for Binance
-- Add option to get time from message payload instead of local system time
-- ~~Implement online subscription via WebSocket API~~
-- ~~Add file-based configuration option~~
-- Testing: 
-  - Enhance unit tests
-  - Add integration tests with mocks
-  - Add performance/load tests
