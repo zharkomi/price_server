@@ -23,7 +23,7 @@ configurations {
 
 dependencies {
     implementation project(':price-common')
-    implementation project(':price-db-clickhouse')
+    implementation project(':modules:price-db-clickhouse')
 
     implementation libs.spring.boot.starter.web
     implementation libs.spring.boot.starter.log4j2
@@ -43,7 +43,7 @@ application {
 }
 
 tasks.register('fatJar', Jar) {
-    dependsOn ':price-common:jar', ':price-db-clickhouse:jar'
+    dependsOn ':price-common:jar', ':modules:price-db-clickhouse:jar'
     archiveClassifier = 'all'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {

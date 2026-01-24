@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.spring.dependency.management)
 }
 
-group = 'com.example'
+group = 'com.price'
 version = '1.0-SNAPSHOT'
 
 java {
@@ -25,8 +25,8 @@ configurations {
 
 dependencies {
     implementation project(':price-common')
-    implementation project(':price-db-clickhouse')
-    runtimeOnly project(':price-source-binance')
+    implementation project(':modules:price-db-clickhouse')
+    runtimeOnly project(':modules:price-source-binance')
 
     implementation libs.spring.boot.starter
     implementation libs.spring.boot.starter.log4j2
@@ -70,7 +70,7 @@ jar {
 }
 
 tasks.register('fatJar', Jar) {
-    dependsOn ':price-common:jar', ':price-db-clickhouse:jar', ':price-source-binance:jar'
+    dependsOn ':price-common:jar', ':modules:price-db-clickhouse:jar', ':modules:price-source-binance:jar'
     archiveClassifier = 'all'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {

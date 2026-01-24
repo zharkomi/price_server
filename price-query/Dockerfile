@@ -12,8 +12,13 @@ COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
 COPY gradle/libs.versions.toml gradle/libs.versions.toml
+# Common module
 COPY price-common/build.gradle price-common/build.gradle
 COPY price-common/src price-common/src
+# ClickHouse database module
+COPY modules/price-db-clickhouse/build.gradle modules/price-db-clickhouse/build.gradle
+COPY modules/price-db-clickhouse/src modules/price-db-clickhouse/src
+# Main application module
 COPY price-query/build.gradle price-query/build.gradle
 COPY price-query/src price-query/src
 

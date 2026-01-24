@@ -1,7 +1,9 @@
 rootProject.name = 'price-server'
 
 include 'price-common'
-include 'price-db-clickhouse'
-include 'price-source-binance'
 include 'price-stream'
 include 'price-query'
+
+// Modules
+include 'modules:price-db-clickhouse'
+include 'modules:price-source-binance'

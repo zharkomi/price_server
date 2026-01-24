@@ -12,8 +12,16 @@ COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
 COPY gradle/libs.versions.toml gradle/libs.versions.toml
+# Common price module
 COPY price-common/build.gradle price-common/build.gradle
 COPY price-common/src price-common/src
+# ClickHouse price database module
+COPY modules/price-db-clickhouse/build.gradle modules/price-db-clickhouse/build.gradle
+COPY modules/price-db-clickhouse/src modules/price-db-clickhouse/src
+# Binance price source module
+COPY modules/price-source-binance/build.gradle modules/price-source-binance/build.gradle
+COPY modules/price-source-binance/src modules/price-source-binance/src
+# Main application module
 COPY price-stream/build.gradle price-stream/build.gradle
 COPY price-stream/src price-stream/src
 
