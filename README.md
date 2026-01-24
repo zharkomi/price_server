@@ -1,6 +1,6 @@
 # Price Server
 
-A high-performance Java 21 market data aggregation system that collects real-time cryptocurrency price data from exchanges and aggregates it into OHLCV (Open, High, Low, Close, Volume) candles at configurable timeframes.
+A high-performance Java 21 market data aggregation system that collects real-time price data from exchanges and aggregates it into OHLCV (Open, High, Low, Close, Volume) candles at configurable timeframes.
 
 ## Project Structure
 
@@ -74,7 +74,7 @@ The project is split into modules:
 
 ### Docker Multi-Stage Build
 
-Both `price-stream` and `price-query` use 2-stage Docker builds with BuildKit cache mounts:
+All modules use multi-stage Docker builds with BuildKit cache mounts:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -95,24 +95,6 @@ Both `price-stream` and `price-query` use 2-stage Docker builds with BuildKit ca
 │  └───────────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
-
-**Gradle Cache with BuildKit:**
-
-The Dockerfiles use BuildKit cache mounts to persist Gradle dependencies between builds:
-
-```dockerfile
-RUN --mount=type=cache,id=gradle-price-stream,target=/root/.gradle \
-    ./gradlew :price-stream:fatJar --no-daemon
-```
-
-| Feature | Description |
-|---------|-------------|
-| **Persistent cache** | Gradle downloads stored in BuildKit's internal storage |
-| **Survives rebuilds** | Dependencies not re-downloaded on code changes |
-| **Isolated per module** | Separate cache IDs prevent parallel build conflicts |
-| **Zero image bloat** | Cache not copied into final image |
-
-Cache location: `/var/lib/docker/buildkit/` (managed by Docker)
 
 To clear the cache: `docker builder prune`
 

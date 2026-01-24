@@ -1,6 +1,19 @@
-version: '3.8'
-
 services:
+  price-ui:
+    build:
+      context: ./price-ui
+      dockerfile: Dockerfile
+    image: price-ui:${IMAGE_TAG:-latest}
+    container_name: price-ui
+    ports:
+      - "${UI_PORT:-80}:80"
+    restart: unless-stopped
+    networks:
+      - price-network
+    depends_on:
+      - price-query
+      - price-stream
+
   price-query:
     build:
       context: .
