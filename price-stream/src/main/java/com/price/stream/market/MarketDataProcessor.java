@@ -7,6 +7,7 @@ import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.price.common.config.PriceConfiguration;
 import com.price.common.config.Instrument;
+import com.price.common.source.PriceEventHandler;
 import com.price.stream.event.buffer.MarketDataEvent;
 import com.price.stream.service.SubscriptionProcessor;
 import com.price.stream.storage.CandlePersistenceProcessor;
@@ -19,8 +20,8 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 @Slf4j
-public class MarketDataProcessor implements AutoCloseable {
-    public final Instrument instrument;
+public class MarketDataProcessor implements PriceEventHandler, AutoCloseable {
+    private final Instrument instrument;
     private final ClientNotifier clientNotifier = new ClientNotifier();
     private final Disruptor<MarketDataEvent> disruptor;
     private final RingBuffer<MarketDataEvent> ringBuffer;
@@ -64,6 +65,12 @@ public class MarketDataProcessor implements AutoCloseable {
         disruptor.start();
     }
 
+    @Override
+    public Instrument getInstrument() {
+        return instrument;
+    }
+
+    @Override
     public void handlePriceEvent(long timestamp, double price, long volume) {
         this.instrument.marketEvents().accumulate(1);
         log.debug("Received market data event: {} {} {}", timestamp, price, volume);

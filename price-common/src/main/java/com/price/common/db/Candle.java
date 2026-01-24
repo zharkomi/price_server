@@ -1,4 +1,4 @@
-package com.price.common.storage;
+package com.price.common.db;
 
 public record Candle(
     String instrument,

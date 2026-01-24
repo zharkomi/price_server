@@ -156,9 +156,9 @@ Shared library with configuration and interfaces.
 |---------|-------------|-------------|
 | `com.price.common.config` | `PriceConfiguration`, `Instrument`, `DataBase` | Configuration records |
 | `com.price.common.config` | `PropertyConfigurationReader`, `FileConfigurationReader` | Config loaders |
-| `com.price.common.storage` | `Candle`, `CandleEvent` | Data models |
-| `com.price.common.storage` | `SaveRepository`, `QueryRepository` | Storage interfaces |
-| `com.price.common.storage` | `RepositoryFactory<T>` | Reflection-based factory |
+| `com.price.common.db` | `Candle`, `CandleEvent` | Data models |
+| `com.price.common.db` | `SaveRepository`, `QueryRepository` | Storage interfaces |
+| `com.price.common.db` | `RepositoryFactory<T>` | Reflection-based factory |
 | `com.price.common` | `Source`, `Util`, `TraceableEvent` | Enums and utilities |
 
 ### Module: price-stream

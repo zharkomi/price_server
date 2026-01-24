@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.example'
+version = '1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':price-common')
+
+    implementation libs.spring.context
+
+    implementation libs.binance.connector
+    implementation libs.json
+
+    // Logging
+    implementation libs.bundles.log4j
+
+    // Testing
+    testImplementation libs.junit.jupiter
+}
+
+test {
+    useJUnitPlatform()
+}

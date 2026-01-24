@@ -1,18 +1,21 @@
-package com.price.db;
+package com.price.db.clickhouse;
 
 import com.lmax.disruptor.EventHandler;
 import com.price.common.config.DataBase;
-import com.price.common.storage.CandleEvent;
-import com.price.common.storage.SaveRepository;
+import com.price.common.db.CandleEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Repository;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 
 @Slf4j
-public class ClickHouseRepository implements SaveRepository, EventHandler<CandleEvent>, AutoCloseable {
+@Scope("prototype")
+@Repository
+public class SaveClickhouseRepository implements com.price.common.db.SaveRepository, EventHandler<CandleEvent>, AutoCloseable {
     private static final String DATABASE_NAME = "prices_db";
     private static final String SCHEMA_RESOURCE = "/clickhouse/schema.sql";
 
@@ -25,7 +28,7 @@ public class ClickHouseRepository implements SaveRepository, EventHandler<Candle
     private final Connection connection;
     private final PreparedStatement insertStatement;
 
-    public ClickHouseRepository(DataBase configuration) {
+    public SaveClickhouseRepository(DataBase configuration) {
         try {
             String baseUrl = configuration.url();
             String user = configuration.user();

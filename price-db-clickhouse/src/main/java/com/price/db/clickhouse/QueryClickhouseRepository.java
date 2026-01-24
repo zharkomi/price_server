@@ -1,11 +1,11 @@
-package com.price.db;
+package com.price.db.clickhouse;
 
 import com.price.common.config.DataBase;
-import com.price.common.storage.Candle;
-import com.price.common.storage.QueryRepository;
+import com.price.common.db.Candle;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Connection;
@@ -16,8 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@Scope("prototype")
 @Repository
-public class ClickHouseRepository implements QueryRepository {
+public class QueryClickhouseRepository implements com.price.common.db.QueryRepository {
     private static final String DATABASE_NAME = "prices_db";
 
     public static final String QUERY_SELECT_CANDLES = "SELECT time, open, high, low, close, volume " +
@@ -29,7 +30,7 @@ public class ClickHouseRepository implements QueryRepository {
 
     private final HikariDataSource dataSource;
 
-    public ClickHouseRepository(DataBase dataBase) {
+    public QueryClickhouseRepository(DataBase dataBase) {
         log.info("ClickHouseRepository configured for database: {}", DATABASE_NAME);
 
         // Append database name to URL (same pattern as price-stream)

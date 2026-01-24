@@ -15,11 +15,24 @@ repositories {
 }
 
 dependencies {
-    api libs.spring.context
+    api project(':price-common')
 
-    implementation libs.jackson.databind
-    implementation libs.commons.lang3
+    implementation libs.spring.context
+    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
+
+    // ClickHouse
+    implementation libs.bundles.clickhouse
+
+    // HikariCP for connection pooling
+    implementation 'com.zaxxer:HikariCP:5.1.0'
+
+    // Disruptor for EventHandler
     implementation libs.disruptor
+
+    // Commons IO for resource loading
+    implementation libs.commons.io
+
+    // Logging
     implementation libs.bundles.log4j
 
     compileOnly libs.lombok

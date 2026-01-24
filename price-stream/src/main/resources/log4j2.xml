@@ -13,7 +13,7 @@
 
         <!-- Rolling File Appender -->
         <RollingFile name="RollingFile"
-                     fileName="${LOG_DIR}/price-server.log"
+                     fileName="${LOG_DIR}/price-stream.log"
                      filePattern="${LOG_DIR}/price-server-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout pattern="${LOG_PATTERN}"/>
             <Policies>

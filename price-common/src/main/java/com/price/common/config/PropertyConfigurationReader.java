@@ -1,6 +1,5 @@
 package com.price.common.config;
 
-import com.price.common.Source;
 import com.price.common.Util;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -70,14 +69,7 @@ public class PropertyConfigurationReader {
         }
 
         String name = parts[0].trim();
-        String sourceStr = parts[1].trim();
-
-        Source source;
-        try {
-            source = Source.valueOf(sourceStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Unknown source: " + sourceStr);
-        }
+        String source = parts[1].trim();
 
         // Parse timeframes for this instrument
         int[] timeframes = parseTimeframes(spec);

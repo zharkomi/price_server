@@ -14,7 +14,7 @@ Shared library containing configuration management, data models, and storage int
 | `PropertyConfigurationReader` | Class | Reads configuration from environment variables (`ps.*` pattern) |
 | `FileConfigurationReader` | Class | Reads configuration from JSON file (via `CONFIG_FILE` env var) |
 
-### Storage Interfaces (`com.price.common.storage`)
+### Storage Interfaces (`com.price.common.db`)
 
 | Interface/Class | Type | Description |
 |-----------------|------|-------------|

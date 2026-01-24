@@ -2,18 +2,18 @@
   "instruments": [
     {
       "name": "BTCUSDT",
-      "source": "BINANCE",
+      "source": "binance",
       "timeframes": ["1m", "5s", "15m", "1h"]
     },
     {
       "name": "ETHUSDT",
-      "source": "BINANCE",
+      "source": "binance",
       "timeframes": ["5s","10s", "5m"]
     }
   ],
   "dataBases": [
     {
-      "type": "com.price.db.ClickHouseRepository",
+      "type": "clickhouse",
       "url": "jdbc:clickhouse://localhost:8123",
       "user": "default",
       "password": "000"

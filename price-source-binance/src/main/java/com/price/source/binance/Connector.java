@@ -1,29 +1,30 @@
-package com.price.stream.market.source;
+package com.price.source.binance;
 
 import com.binance.connector.client.WebSocketStreamClient;
 import com.binance.connector.client.impl.WebSocketStreamClientImpl;
-import com.price.stream.market.Connector;
 import com.price.common.config.Instrument;
-import com.price.stream.market.MarketDataProcessor;
+import com.price.common.source.PriceEventHandler;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class BinanceConnector implements Connector {
-    private static final Logger logger = LoggerFactory.getLogger(BinanceConnector.class);
+@Service
+public class Connector implements com.price.common.source.Connector {
+    private static final Logger logger = LoggerFactory.getLogger(Connector.class);
 
-    private final Map<String, MarketDataProcessor> processorsBySymbol = new ConcurrentHashMap<>();
+    private final Map<String, PriceEventHandler> handlersBySymbol = new ConcurrentHashMap<>();
     private WebSocketStreamClient wsClient;
     private int connectionId;
 
     @Override
     public void start() {
-        if (processorsBySymbol.isEmpty()) {
-            logger.warn("No processors registered, not starting WebSocket connection");
+        if (handlersBySymbol.isEmpty()) {
+            logger.warn("No handlers registered, not starting WebSocket connection");
             return;
         }
 
@@ -31,7 +32,7 @@ public class BinanceConnector implements Connector {
 
         // Build the stream names for all registered symbols
         ArrayList<String> streamNames = new ArrayList<>();
-        for (String symbol : processorsBySymbol.keySet()) {
+        for (String symbol : handlersBySymbol.keySet()) {
             streamNames.add(symbol.toLowerCase() + "@bookTicker");
         }
 
@@ -44,12 +45,12 @@ public class BinanceConnector implements Connector {
     }
 
     @Override
-    public void register(MarketDataProcessor mdp) {
-        Instrument instrument = mdp.instrument;
+    public void register(PriceEventHandler handler) {
+        Instrument instrument = handler.getInstrument();
         String symbol = instrument.name();
 
-        logger.info("Registering processor for symbol: {}", symbol);
-        processorsBySymbol.put(symbol, mdp);
+        logger.info("Registering handler for symbol: {}", symbol);
+        handlersBySymbol.put(symbol, handler);
     }
 
     private void onMessage(String message) {
@@ -88,13 +89,13 @@ public class BinanceConnector implements Connector {
             // bookTicker doesn't include event time field, use system time
             long timestamp = System.currentTimeMillis();
 
-            MarketDataProcessor processor = processorsBySymbol.get(symbol);
-            if (processor != null) {
-                processor.handlePriceEvent(timestamp, midPrice, volume);
+            PriceEventHandler handler = handlersBySymbol.get(symbol);
+            if (handler != null) {
+                handler.handlePriceEvent(timestamp, midPrice, volume);
                 logger.debug("Processed book ticker for {}: bid={}, ask={}, mid={}, volume={}, eventTime={}",
                     symbol, bidPrice, askPrice, midPrice, volume, timestamp);
             } else {
-                logger.warn("No processor found for symbol: {}", symbol);
+                logger.warn("No handler found for symbol: {}", symbol);
             }
         } catch (Exception e) {
             logger.error("Error processing book ticker data: {}", data, e);

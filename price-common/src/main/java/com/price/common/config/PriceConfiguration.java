@@ -1,7 +1,6 @@
 package com.price.common.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.price.common.Source;
 
 import java.util.List;
 
@@ -19,7 +18,7 @@ public record PriceConfiguration(List<Instrument> instruments,
         return new PropertyConfigurationReader().read();
     }
 
-    public List<Source> getSources() {
+    public List<String> getSources() {
         return this.instruments.stream().map(Instrument::source).distinct().toList();
     }
 }

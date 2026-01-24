@@ -1,8 +1,8 @@
 package com.price.query;
 
-import com.price.common.storage.RepositoryFactory;
+import com.price.common.db.RepositoryContainer;
 import com.price.common.config.PriceConfiguration;
-import com.price.common.storage.QueryRepository;
+import com.price.common.db.QueryRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -10,17 +10,12 @@ import org.springframework.context.annotation.Configuration;
 public class ApplicationContext {
 
     @Bean
-    public RepositoryFactory<QueryRepository> getRepositoryFactory(PriceConfiguration configuration) {
-        return new RepositoryFactory<>(configuration);
-    }
-
-    @Bean
     public PriceConfiguration getConfiguration() {
         return PriceConfiguration.read();
     }
 
-    @Bean
-    public QueryRepository getQueryRepository(RepositoryFactory<QueryRepository> repositoryFactory) {
-        return repositoryFactory.getRepositories().getFirst();
+    @Bean(name = "queryRepository")
+    public QueryRepository getQueryRepository(RepositoryContainer repositoryContainer) {
+        return repositoryContainer.getQueryRepositories().getFirst();
     }
 }

@@ -1,7 +1,7 @@
 package com.price.query.controller;
 
 import com.price.query.service.HistoryService;
-import com.price.common.storage.Candle;
+import com.price.common.db.Candle;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

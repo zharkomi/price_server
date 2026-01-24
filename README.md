@@ -231,7 +231,7 @@ ORDER BY (instrument, timeframe_ms, time)
 
 1. **Start ClickHouse**
    ```bash
-   docker run -d -p 8123:8123 --name clickhouse clickhouse/clickhouse-server
+   docker compose up clickhouse
    ```
 
 2. **Run Stream Server**
@@ -241,5 +241,5 @@ ORDER BY (instrument, timeframe_ms, time)
 
 3. **Run Query Server**
    ```bash
-   ./gradlew :price-query:bootRun
+   CONFIG_FILE=config/config.json ./gradlew :price-query:bootRun
    ```

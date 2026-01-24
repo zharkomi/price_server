@@ -105,7 +105,7 @@ public class SubscriptionProcessor implements CandleProcessor {
                     String json = MAPPER.writeValueAsString(events);
                     channel.writeAndFlush(new TextWebSocketFrame(json));
                 }
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 log.error("Failed to serialize events", e);
             }
         }

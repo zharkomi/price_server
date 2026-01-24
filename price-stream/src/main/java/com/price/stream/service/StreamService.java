@@ -2,6 +2,7 @@ package com.price.stream.service;
 
 import com.price.common.config.PriceConfiguration;
 import com.price.stream.market.MarketDataProcessor;
+import com.price.stream.market.MarketDataProcessorFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
@@ -15,10 +16,12 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
 @Slf4j
+@Service
 public class StreamService implements AutoCloseable {
     private static final String WEBSOCKET_PATH = "/stream";
 
@@ -30,9 +33,9 @@ public class StreamService implements AutoCloseable {
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
 
-    public StreamService(PriceConfiguration configuration, Map<String, MarketDataProcessor> marketDataProcessorMap) {
+    public StreamService(PriceConfiguration configuration, MarketDataProcessorFactory marketDataProcessorFactory) {
         this.port = configuration.httpPort() + 1;
-        this.marketDataProcessorMap = marketDataProcessorMap;
+        this.marketDataProcessorMap = marketDataProcessorFactory.marketDataProcessorMap;
     }
 
     public void start() {

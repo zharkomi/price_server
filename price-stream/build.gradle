@@ -1,6 +1,8 @@
 plugins {
-    id 'java'
-    id 'application'
+    alias(libs.plugins.java)
+    alias(libs.plugins.application)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
 }
 
 group = 'com.example'
@@ -15,18 +17,25 @@ repositories {
     mavenCentral()
 }
 
+configurations {
+    all {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    }
+}
+
 dependencies {
     implementation project(':price-common')
+    implementation project(':price-db-clickhouse')
+    runtimeOnly project(':price-source-binance')
 
-    implementation libs.binance.connector
+    implementation libs.spring.boot.starter
+    implementation libs.spring.boot.starter.log4j2
+
     implementation libs.disruptor
     implementation libs.commons.lang3
     implementation libs.commons.io
     implementation libs.json
     implementation libs.jackson.databind
-
-    // ClickHouse
-    implementation libs.bundles.clickhouse
 
     // Jetty
     implementation libs.bundles.jetty
@@ -41,8 +50,7 @@ dependencies {
     annotationProcessor libs.lombok
 
     // Testing
-    testImplementation libs.junit.jupiter
-    testImplementation libs.bundles.mockito
+    testImplementation libs.spring.boot.starter.test
     testImplementation libs.jetty.client
 }
 
@@ -62,7 +70,7 @@ jar {
 }
 
 tasks.register('fatJar', Jar) {
-    dependsOn ':price-common:jar'
+    dependsOn ':price-common:jar', ':price-db-clickhouse:jar', ':price-source-binance:jar'
     archiveClassifier = 'all'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {

@@ -6,14 +6,14 @@ Fetches historical OHLCV candle data from the price server and plots it using tk
 
 Usage:
     # Fetch data for a specific time range
-    ./plot_history.py --instrument BTCUSDT@BINANCE --timeframe 1m --start 1735516800 [--end 1735520400]
+    ./plot_history.py --instrument BTCUSDT@binance --timeframe 1m --start 1735516800 [--end 1735520400]
 
     # Fetch last N bars from now
-    ./plot_history.py --instrument BTCUSDT@BINANCE --timeframe 1m --last 100
+    ./plot_history.py --instrument BTCUSDT@binance --timeframe 1m --last 100
 
 Examples:
-    python3 scripts/plot_history.py --instrument BTCUSDT@BINANCE --timeframe 1m --start 1735516800 --end 1735520400
-    python3 scripts/plot_history.py --instrument ETHUSDT@BINANCE --timeframe 5m --last 200
+    python3 scripts/plot_history.py --instrument BTCUSDT@binance --timeframe 1m --start 1735516800 --end 1735520400
+    python3 scripts/plot_history.py --instrument ETHUSDT@binance --timeframe 5m --last 200
 """
 
 import argparse
@@ -272,7 +272,7 @@ def main():
     )
 
     parser.add_argument('--instrument', required=True,
-                        help='Instrument symbol (e.g., BTCUSDT@BINANCE)')
+                        help='Instrument symbol (e.g., BTCUSDT@binance)')
     parser.add_argument('--timeframe', required=True,
                         help='Timeframe interval (e.g., 1m, 5m, 1h)')
     parser.add_argument('--start', type=int,

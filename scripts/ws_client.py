@@ -56,9 +56,9 @@ async def main():
             print(f"[{timestamp()}] Connected!")
 
             # Subscribe to BTCUSDT 5s (5000ms) and ETHUSDT 10s (10000ms)
-            await subscribe(ws, "BTCUSDT@BINANCE", 5000)
-            await subscribe(ws, "ETHUSDT@BINANCE", 5000)
-            await subscribe(ws, "ETHUSDT@BINANCE", 10000)
+            await subscribe(ws, "BTCUSDT@binance", 5000)
+            await subscribe(ws, "ETHUSDT@binance", 5000)
+            await subscribe(ws, "ETHUSDT@binance", 10000)
 
             print(f"\n[{timestamp()}] Listening for messages (Ctrl+C to exit)...")
             print("-" * 60)

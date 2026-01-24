@@ -1,4 +1,4 @@
-package com.price.common.storage;
+package com.price.common.db;
 
 import com.price.common.TraceableEvent;
 import lombok.Getter;

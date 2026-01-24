@@ -4,7 +4,7 @@ disruptor = "4.0.0"
 commons-lang3 = "3.14.0"
 commons-io = "2.18.0"
 json = "20231013"
-jackson = "2.18.2"
+jackson = "2.15.3"
 clickhouse = "0.9.4"
 httpclient5 = "5.3.1"
 lz4 = "1.8.0"
@@ -14,6 +14,9 @@ log4j = "2.24.3"
 lombok = "1.18.34"
 junit = "5.10.1"
 mockito = "5.8.0"
+spring-boot = "3.2.2"
+spring-dependency-management = "1.1.4"
+spring = "6.1.3"
 
 [libraries]
 binance-connector = { module = "io.github.binance:binance-connector-java", version.ref = "binance" }
@@ -36,6 +39,11 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jun
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 jetty-client = { module = "org.eclipse.jetty:jetty-client", version.ref = "jetty" }
+spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "spring-boot" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2", version.ref = "spring-boot" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+spring-context = { module = "org.springframework:spring-context", version.ref = "spring" }
 
 [bundles]
 log4j = ["log4j-api", "log4j-core", "log4j-slf4j2-impl"]
@@ -46,3 +54,5 @@ clickhouse = ["clickhouse-jdbc", "httpclient5", "lz4-java"]
 [plugins]
 java = { id = "java" }
 application = { id = "application" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }

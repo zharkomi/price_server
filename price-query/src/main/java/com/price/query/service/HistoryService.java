@@ -1,7 +1,8 @@
 package com.price.query.service;
 
-import com.price.common.storage.Candle;
-import com.price.common.storage.QueryRepository;
+import com.price.common.db.Candle;
+import com.price.common.db.QueryRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,7 +12,7 @@ public class HistoryService {
 
     private final QueryRepository repository;
 
-    public HistoryService(QueryRepository repository) {
+    public HistoryService(@Qualifier("queryRepository") QueryRepository repository) {
         this.repository = repository;
     }
 

@@ -1,4 +1,5 @@
-import com.price.common.Source;
+package com.price.market;
+
 import com.price.common.config.Instrument;
 import com.price.stream.common.SubscriptionKey;
 import com.price.stream.event.buffer.MarketDataEvent;
@@ -24,7 +25,7 @@ class CandleAggregatorTest {
     private CandlePersistenceProcessor candleProcessor;
 
     private CandleAggregator candleAggregator;
-    private static final Instrument INSTRUMENT = new Instrument("BTCUSDT", Source.BINANCE, new int[]{60000});
+    private static final Instrument INSTRUMENT = new Instrument("BTCUSDT", "com.price.source.binance", new int[]{60000});
     private static final int TIMEFRAME_MS = 60000; // 1 minute
     private static final SubscriptionKey SUBSCRIPTION_KEY = new SubscriptionKey(INSTRUMENT.fullName(), TIMEFRAME_MS);
 
@@ -216,7 +217,7 @@ class CandleAggregatorTest {
     @Test
     void testDifferentTimeframePeriods() throws Exception {
         // Test with 5-minute timeframe (300000ms)
-        Instrument fiveMinInstrument = new Instrument("BTCUSDT", Source.BINANCE, new int[]{300000});
+        Instrument fiveMinInstrument = new Instrument("BTCUSDT", "com.price.source.binance", new int[]{300000});
         CandleAggregator fiveMinAggregator = new CandleAggregator(fiveMinInstrument, 300000, List.of(candleProcessor));
         SubscriptionKey fiveMinSubscriptionKey = new SubscriptionKey(fiveMinInstrument.fullName(), 300000);
 
