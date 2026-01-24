@@ -10,27 +10,6 @@ Real-time market data streaming server that collects price data from cryptocurre
 - WebSocket streaming API for real-time subscriptions
 - ClickHouse persistence with batch insertion
 
-## Running
-
-### Docker
-
-```bash
-docker compose up price-stream --build -d
-```
-
-### Local Development
-
-```bash
-CONFIG_FILE=config/config.json ./gradlew :price-stream:run
-```
-
-### Build Fat JAR
-
-```bash
-./gradlew :price-stream:fatJar
-java -jar price-stream/build/libs/price-stream-*-all.jar
-```
-
 ## Architecture
 
 ### Dual-Buffer

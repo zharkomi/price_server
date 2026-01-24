@@ -8,37 +8,6 @@ REST API service for querying historical OHLCV candle data from ClickHouse. Buil
 - Spring Boot with HikariCP connection pooling
 - Compact JSON response format optimized for charting libraries
 
-## Running
-
-### Docker
-
-```bash
-docker compose up price-query --build -d
-```
-
-### Local Development
-
-```bash
-./gradlew :price-query:bootRun
-```
-
-### Build JAR
-
-```bash
-./gradlew :price-query:bootJar
-java -jar price-query/build/libs/price-query-*-SNAPSHOT.jar
-```
-
-## Configuration
-
-Environment variables:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ps.clickhouse.url` | ClickHouse JDBC URL | `jdbc:clickhouse://localhost:8123` |
-| `ps.clickhouse.user` | ClickHouse username | `default` |
-| `ps.clickhouse.password` | ClickHouse password | `` |
-
 ## REST API
 
 ### GET /history

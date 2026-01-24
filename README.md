@@ -11,6 +11,7 @@ The project is split into modules:
 | [price-common](./price-common/README.md) | Shared library with configuration, interfaces, and data models |
 | [price-stream](./price-stream/README.md) | Real-time streaming server - WebSocket listener, aggregation, storage |
 | [price-query](./price-query/README.md) | REST API service for historical data queries |
+| [modules](./modules/README.md) | Extension modules - pluggable storage backends and exchange connectors |
 | [scripts](./scripts/README.md) | Python utility scripts for testing and visualization |
 
 ## Key Features
