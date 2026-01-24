@@ -11,6 +11,7 @@ The project is split into modules:
 | [price-common](./price-common/README.md) | Shared library with configuration, interfaces, and data models |
 | [price-stream](./price-stream/README.md) | Real-time streaming server - WebSocket listener, aggregation, storage |
 | [price-query](./price-query/README.md) | REST API service for historical data queries |
+| [price-ui](./price-ui/README.md) | Angular 18 web UI with TradingView Lightweight Charts |
 | [modules](./modules/README.md) | Extension modules - pluggable storage backends and exchange connectors |
 | [scripts](./scripts/README.md) | Python utility scripts for testing and visualization |
 
@@ -34,18 +35,6 @@ The project is split into modules:
    ```
 
 2. **Configure instruments** in `config/config.json`:
-   ```json
-   {
-     "instruments": [
-       {"name": "BTCUSDT", "source": "BINANCE", "timeframes": ["1m", "5m", "1h"]}
-     ],
-     "dataBases": [
-       {"type": "com.price.db.ClickHouseRepository", "url": "jdbc:clickhouse://clickhouse:8123", "user": "default", "password": ""}
-     ],
-     "httpPort": 8080,
-     "disruptorBufferSize": 4096
-   }
-   ```
 
 3. **Start services**
    ```bash
@@ -61,7 +50,15 @@ The project is split into modules:
    curl "http://localhost:8080/history?symbol=BTCUSDT@BINANCE&interval=1m&from=1735516800&to=1735520400"
    ```
 
-5. **Stop**
+5. **Run Web UI** (optional, requires Node.js 18+)
+   ```bash
+   cd price-ui
+   npm install
+   npm start
+   ```
+   Open `http://localhost:4200` in your browser.
+
+6. **Stop**
    ```bash
    docker compose down
    ```
@@ -72,6 +69,7 @@ The project is split into modules:
 |---------|------|-------------|
 | price-query | 8080 | REST API for historical queries |
 | price-stream | 8081 | WebSocket streaming (httpPort + 1) |
+| price-ui | 4200 | Angular web UI (development server) |
 | clickhouse | 8123, 9000 | ClickHouse HTTP and native ports |
 
 ### Docker Multi-Stage Build
@@ -147,12 +145,12 @@ Set `CONFIG_FILE` environment variable to point to your config file:
 ```json
 {
   "instruments": [
-    {"name": "BTCUSDT", "source": "BINANCE", "timeframes": ["1m", "5m", "15m", "1h"]},
-    {"name": "ETHUSDT", "source": "BINANCE", "timeframes": ["5m", "1h"]}
+    {"name": "BTCUSDT", "source": "binance", "timeframes": ["1m", "5s", "15m", "1h"]},
+    {"name": "ETHUSDT", "source": "binance", "timeframes": ["5s", "10s", "5m"]}
   ],
   "dataBases": [
     {
-      "type": "com.price.db.ClickHouseRepository",
+      "type": "clickhouse",
       "url": "jdbc:clickhouse://localhost:8123",
       "user": "default",
       "password": ""

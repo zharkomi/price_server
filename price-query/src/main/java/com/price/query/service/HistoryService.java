@@ -2,6 +2,7 @@ package com.price.query.service;
 
 import com.price.common.db.Candle;
 import com.price.common.db.QueryRepository;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -22,13 +23,18 @@ public class HistoryService {
     }
 
     private int parseTimeframeToMilliseconds(String timeframe) {
+        int value = NumberUtils.toInt(timeframe, -1);
+        if (value > 0) {
+            return value;
+        }
+
         if (timeframe == null || timeframe.isEmpty()) {
             throw new IllegalArgumentException("Timeframe cannot be null or empty");
         }
 
         char unit = timeframe.charAt(timeframe.length() - 1);
         String valueStr = timeframe.substring(0, timeframe.length() - 1);
-        int value = Integer.parseInt(valueStr);
+        value = NumberUtils.toInt(valueStr, 1);
 
         return switch (unit) {
             case 's' -> value * 1000;

@@ -1,0 +1,47 @@
+<div class="container">
+  <div class="controls">
+    <div class="control-group">
+      <label for="exchange">Exchange</label>
+      <select id="exchange" [(ngModel)]="selectedExchange" (ngModelChange)="onExchangeChange()" [disabled]="isRunning">
+        <option *ngFor="let exchange of exchanges" [value]="exchange">{{ exchange }}</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="instrument">Instrument</label>
+      <select id="instrument" [(ngModel)]="selectedInstrument" (ngModelChange)="onInstrumentChange()" [disabled]="isRunning">
+        <option *ngFor="let instrument of filteredInstruments" [value]="instrument">{{ instrument }}</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="timeframe">Timeframe</label>
+      <select id="timeframe" [(ngModel)]="selectedTimeframe" [disabled]="isRunning">
+        <option *ngFor="let tf of timeframes" [value]="tf">{{ tf }}</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="preload">Preload Bars</label>
+      <input
+        id="preload"
+        type="number"
+        [(ngModel)]="preloadBars"
+        min="1"
+        max="1000"
+        [disabled]="isRunning"
+      />
+    </div>
+
+    <button
+      class="start-stop-btn"
+      [class.running]="isRunning"
+      [disabled]="isLoading || !selectedInstrument || !selectedTimeframe"
+      (click)="toggleStartStop()"
+    >
+      {{ isLoading ? 'Loading...' : (isRunning ? 'Stop' : 'Start') }}
+    </button>
+  </div>
+
+  <div #chartContainer class="chart-container"></div>
+</div>

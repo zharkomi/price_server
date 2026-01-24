@@ -27,6 +27,7 @@ dependencies {
 
     implementation libs.spring.boot.starter.web
     implementation libs.spring.boot.starter.log4j2
+    implementation libs.commons.lang3
 
     compileOnly libs.lombok
     annotationProcessor libs.lombok

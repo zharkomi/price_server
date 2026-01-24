@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: ./price-query/Dockerfile
-    image: ${QUERY_IMAGE_NAME:-price-query}:${IMAGE_TAG:-latest}
-    container_name: ${QUERY_CONTAINER_NAME:-price-query}
+    image: price-query:${IMAGE_TAG:-latest}
+    container_name: price-query
     volumes:
       - ./run/logs:/app/logs
       - ./config:/app/config:ro
@@ -27,8 +27,8 @@ services:
     build:
       context: .
       dockerfile: ./price-stream/Dockerfile
-    image: ${STREAM_IMAGE_NAME:-price-stream}:${IMAGE_TAG:-latest}
-    container_name: ${STREAM_CONTAINER_NAME:-price-stream}
+    image: price-stream:${IMAGE_TAG:-latest}
+    container_name: price-stream
     volumes:
       - ./run/logs:/app/logs
       - ./config:/app/config:ro
@@ -47,7 +47,7 @@ services:
 
   clickhouse:
     image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-latest}
-    container_name: ${CLICKHOUSE_CONTAINER_NAME:-price-clickhouse}
+    container_name: price-clickhouse
     ports:
       - "${CLICKHOUSE_HTTP_PORT:-8123}:8123"
       - "${CLICKHOUSE_NATIVE_PORT:-9000}:9000"

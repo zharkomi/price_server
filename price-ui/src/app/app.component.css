@@ -1,0 +1,99 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: #131722;
+}
+
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 12px 16px;
+  background-color: #1e222d;
+  border-bottom: 1px solid #2a2e39;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.control-group label {
+  font-size: 11px;
+  color: #787b86;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.control-group select,
+.control-group input {
+  padding: 8px 12px;
+  border: 1px solid #2a2e39;
+  border-radius: 4px;
+  background-color: #131722;
+  color: #d1d4dc;
+  font-size: 14px;
+  min-width: 120px;
+  cursor: pointer;
+}
+
+.control-group select:hover,
+.control-group input:hover {
+  border-color: #363a45;
+}
+
+.control-group select:focus,
+.control-group input:focus {
+  outline: none;
+  border-color: #2962ff;
+}
+
+.control-group select:disabled,
+.control-group input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.control-group input[type="number"] {
+  width: 100px;
+}
+
+.start-stop-btn {
+  padding: 8px 24px;
+  border: none;
+  border-radius: 4px;
+  background-color: #2962ff;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-width: 100px;
+}
+
+.start-stop-btn:hover:not(:disabled) {
+  background-color: #1e53e4;
+}
+
+.start-stop-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.start-stop-btn.running {
+  background-color: #ef5350;
+}
+
+.start-stop-btn.running:hover:not(:disabled) {
+  background-color: #d32f2f;
+}
+
+.chart-container {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}

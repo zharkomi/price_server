@@ -13,6 +13,9 @@ This is a Java 21 multi-module market data aggregation system that collects real
 | `price-common` | Library | Shared configuration, interfaces, data models |
 | `price-stream` | Application | Real-time streaming - WebSocket listener, aggregation, storage, WebSocket API |
 | `price-query` | Spring Boot | REST API for historical data queries |
+| `price-ui` | Angular 18 | Web UI with TradingView Lightweight Charts |
+| `modules/price-db-clickhouse` | Extension | Database storage module for ClickHouse persistence |
+| `modules/price-source-binance` | Extension | Exchange connector for Binance WebSocket streams |
 | `scripts` | Python | Utility scripts for testing and visualization |
 
 ## Build and Run Commands
@@ -39,6 +42,12 @@ CONFIG_FILE=config/config.json ./gradlew :price-stream:run
 
 # Clean build artifacts
 ./gradlew clean
+
+# Angular UI (price-ui)
+cd price-ui
+npm install
+npm start           # Development server at http://localhost:4200
+npm run build       # Production build to dist/price-ui/
 
 # Docker
 docker compose up --build -d
@@ -70,7 +79,7 @@ Set `CONFIG_FILE` environment variable to point to config file:
   ],
   "dataBases": [
     {
-      "type": "com.price.db.ClickHouseRepository",
+      "type": "clickhouse",
       "url": "jdbc:clickhouse://localhost:8123",
       "user": "default",
       "password": ""
@@ -80,6 +89,8 @@ Set `CONFIG_FILE` environment variable to point to config file:
   "disruptorBufferSize": 4096
 }
 ```
+
+Note: The `type` field matches the `getName()` return value from `RepositoryRegistry` implementations (e.g., `"clickhouse"`).
 
 ### Environment Variables
 
@@ -158,7 +169,9 @@ Shared library with configuration and interfaces.
 | `com.price.common.config` | `PropertyConfigurationReader`, `FileConfigurationReader` | Config loaders |
 | `com.price.common.db` | `Candle`, `CandleEvent` | Data models |
 | `com.price.common.db` | `SaveRepository`, `QueryRepository` | Storage interfaces |
+| `com.price.common.db` | `RepositoryRegistry` | Module registration for auto-discovery |
 | `com.price.common.db` | `RepositoryFactory<T>` | Reflection-based factory |
+| `com.price.common.source` | `Connector`, `PriceEventHandler` | Exchange connector interfaces |
 | `com.price.common` | `Source`, `Util`, `TraceableEvent` | Enums and utilities |
 
 ### Module: price-stream
@@ -172,8 +185,7 @@ Real-time streaming server with WebSocket API.
 | `com.price.stream.market` | `CandleAggregator` | OHLCV aggregation logic |
 | `com.price.stream.market` | `NonDriftingTimer` | Sync timer at second boundaries |
 | `com.price.stream.market` | `ClientNotifier` | Routes events to WebSocket clients |
-| `com.price.stream.market` | `Connector` | Connector interface |
-| `com.price.stream.market.source` | `BinanceConnector`, `ConnectorFactory` | Exchange connectors |
+| `com.price.stream.market.source` | `ConnectorFactory` | Creates connectors per source |
 | `com.price.stream.storage` | `CandlePersistenceProcessor` | Output Disruptor bridge |
 | `com.price.stream.service` | `StreamService` | Netty WebSocket server |
 | `com.price.stream.service` | `ClientConnectionHandler` | WebSocket frame handler |
@@ -194,7 +206,43 @@ Spring Boot REST API service.
 | `com.price.query.controller` | `HistoryController` | REST endpoint |
 | `com.price.query.service` | `HistoryService` | Business logic |
 | `com.price.query.dto` | `HistoryResponse` | Response DTO |
-| `com.price.db` | `ClickHouseRepository` | QueryRepository implementation |
+
+### Module: price-ui
+
+Angular 18 web application with TradingView Lightweight Charts.
+
+| Path | Description |
+|------|-------------|
+| `src/app/app.component.ts` | Main component with chart, controls, and WebSocket logic |
+| `src/app/services/config.service.ts` | Fetches available instruments from `/api/config` |
+| `src/app/services/history.service.ts` | Fetches historical candles from `/api/history` |
+| `src/app/services/stream.service.ts` | WebSocket client for real-time updates |
+| `src/app/models/config.model.ts` | TypeScript interfaces for API responses |
+| `proxy.conf.json` | Dev server proxy config (API → 8080, WS → 8081) |
+
+**Features:**
+- Full-window candlestick chart
+- Exchange, instrument, and timeframe selectors
+- Configurable history preload (number of bars)
+- Real-time WebSocket streaming with Start/Stop control
+
+### Extension Module: price-db-clickhouse
+
+ClickHouse database storage implementation.
+
+| Class | Description |
+|-------|-------------|
+| `SaveClickhouseRepository` | Implements `SaveRepository` - writes candle events from Disruptor |
+| `QueryClickhouseRepository` | Implements `QueryRepository` - handles historical queries via HikariCP |
+| `ClickhouseRegistry` | Implements `RepositoryRegistry` - registers module as `"clickhouse"` |
+
+### Extension Module: price-source-binance
+
+Binance exchange connector implementation.
+
+| Class | Description |
+|-------|-------------|
+| `Connector` | Implements `Connector` - WebSocket client for Binance bookTicker stream |
 
 ## REST API (price-query)
 
@@ -258,25 +306,66 @@ PARTITION BY (instrument, timeframe_ms, toDate(time / 1000))
 ORDER BY (instrument, timeframe_ms, time)
 ```
 
-### Adding Alternative Storage
+### Adding a Database Module
 
-1. Implement `SaveRepository` (for stream) or `QueryRepository` (for query) interface
-2. Add constructor accepting `DataBase` configuration record
-3. Specify class name in config: `"type": "com.price.db.NewRepository"`
+Create extension module in `modules/price-db-{name}/`:
 
-## Adding New Exchange Support
+1. Add `build.gradle` with dependency on `project(':price-common')` and `libs.disruptor`
+2. Implement `SaveRepository` with `@Repository` and `@Scope("prototype")` annotations
+   - Constructor must accept `DataBase` parameter
+   - Use `endOfBatch` flag to batch writes for performance
+3. Implement `QueryRepository` with `@Repository` and `@Scope("prototype")` annotations
+   - Use HikariCP for connection pooling
+4. Implement `RepositoryRegistry` with `@Component` and `@Order(n)` annotations
+   - `getName()` must match `type` field in configuration
+5. Add module to `settings.gradle`: `include 'modules:price-db-{name}'`
 
-1. Add value to `Source` enum in `price-common`
-2. Create connector class in `price-stream` implementing `Connector` interface:
+**Key Interfaces:**
+```java
+// Write path - receives candle events from Disruptor
+public interface SaveRepository extends EventHandler<CandleEvent>, AutoCloseable {
+    void onEvent(CandleEvent event, long sequence, boolean endOfBatch) throws Exception;
+}
+
+// Read path - handles historical queries
+public interface QueryRepository extends AutoCloseable {
+    List<Candle> queryCandles(String instrument, int timeframeMs,
+                              long fromTimestamp, long toTimestamp) throws Exception;
+}
+
+// Module registration for auto-discovery
+public interface RepositoryRegistry {
+    String getName();  // Must match "type" in config
+    Class<? extends SaveRepository> getSaveRepositoryClass();
+    Class<? extends QueryRepository> getQueryRepositoryClass();
+}
+```
+
+## Adding a Source Connector Module
+
+Create extension module in `modules/price-source-{exchange}/`:
+
+1. Add `build.gradle` with dependency on `project(':price-common')` and exchange SDK
+2. Implement `Connector` with `@Service` annotation:
    ```java
-   public class NewExchangeConnector implements Connector {
-       void register(MarketDataProcessor processor);
+   public interface Connector extends AutoCloseable {
        void start();
-       void close();
+       void register(PriceEventHandler handler);
    }
    ```
-3. Update `ConnectorFactory` to handle new source
-4. Convert exchange data to `MarketDataEvent` (DATA type with price/volume)
+3. Store handlers in `ConcurrentHashMap<String, PriceEventHandler>` by symbol
+4. `register()` is called before `start()` for each configured instrument
+5. Route incoming price data to correct handler by symbol
+6. Add module to `settings.gradle`: `include 'modules:price-source-{exchange}'`
+7. Configure: `{"instruments": [{"name": "BTCUSDT", "source": "{EXCHANGE}", "timeframes": ["1m"]}]}`
+
+**Callback interface provided by system:**
+```java
+public interface PriceEventHandler {
+    Instrument getInstrument();
+    void handlePriceEvent(long timestamp, double price, long volume);
+}
+```
 
 ## Key Implementation Notes
 
@@ -286,6 +375,8 @@ ORDER BY (instrument, timeframe_ms, time)
 - Price uses `double`, volume uses `long` for precision
 - Timeframes stored as milliseconds internally
 - WebSocket streaming port = httpPort + 1
-- Stream and Query modules have separate ClickHouseRepository implementations
-- RepositoryFactory uses reflection to instantiate repositories from config
+- Extension modules in `modules/` are auto-discovered via Spring component scanning
+- `RepositoryRegistry` implementations register database modules by name (e.g., `"clickhouse"`)
+- Use `@Scope("prototype")` for repositories to support multiple database configurations
+- Use `endOfBatch` flag in `SaveRepository` to batch writes for performance
 - After creating new files, add them to git
