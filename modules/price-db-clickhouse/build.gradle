@@ -1,0 +1,46 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.price'
+version = '1.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api project(':price-common')
+
+    implementation libs.spring.context
+    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
+
+    // ClickHouse
+    implementation libs.bundles.clickhouse
+
+    // HikariCP for connection pooling
+    implementation 'com.zaxxer:HikariCP:5.1.0'
+
+    // Disruptor for EventHandler
+    implementation libs.disruptor
+
+    // Commons IO for resource loading
+    implementation libs.commons.io
+
+    // Logging
+    implementation libs.bundles.log4j
+
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+
+    testImplementation libs.junit.jupiter
+}
+
+test {
+    useJUnitPlatform()
+}
