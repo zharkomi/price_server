@@ -46,19 +46,14 @@ The project is split into modules:
    # Check services
    docker compose ps
 
-   # Query historical data
+   # Open Web UI
+   open http://localhost
+
+   # Query historical data via API
    curl "http://localhost:8080/history?symbol=BTCUSDT@BINANCE&interval=1m&from=1735516800&to=1735520400"
    ```
 
-5. **Run Web UI** (optional, requires Node.js 18+)
-   ```bash
-   cd price-ui
-   npm install
-   npm start
-   ```
-   Open `http://localhost:4200` in your browser.
-
-6. **Stop**
+5. **Stop**
    ```bash
    docker compose down
    ```
@@ -67,9 +62,9 @@ The project is split into modules:
 
 | Service | Port | Description |
 |---------|------|-------------|
+| price-ui | 80 | Web UI with nginx (proxies /api and /ws) |
 | price-query | 8080 | REST API for historical queries |
-| price-stream | 8081 | WebSocket streaming (httpPort + 1) |
-| price-ui | 4200 | Angular web UI (development server) |
+| price-stream | 8081 | WebSocket streaming |
 | clickhouse | 8123, 9000 | ClickHouse HTTP and native ports |
 
 ### Docker Multi-Stage Build
@@ -224,3 +219,11 @@ ORDER BY (instrument, timeframe_ms, time)
    ```bash
    CONFIG_FILE=config/config.json ./gradlew :price-query:bootRun
    ```
+
+4. **Run Web UI** (requires Node.js 18+)
+   ```bash
+   cd price-ui
+   npm install
+   npm start
+   ```
+   Open `http://localhost:4200` in your browser.
