@@ -1,9 +1,13 @@
 package com.price.stream.market;
 
+import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.price.common.config.Instrument;
 import com.price.common.config.PriceConfiguration;
+import com.price.stream.event.buffer.MarketDataEvent;
 import com.price.stream.service.ClientSubscriptionProcessor;
 import com.price.stream.storage.PersistenceHandler;
+import io.netty.channel.socket.SocketChannel;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -12,31 +16,26 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Phaser;
 
-@Service
-public class MarketDataHandler {
+public class MarketDataHandler<T extends ClientSubscriptionProcessor> {
 
     private final Map<String, InstrumentDataProcessor> marketDataProcessorMap;
-    private final List<ClientSubscriptionProcessor> clients = new CopyOnWriteArrayList<>();
-    private final Phaser phaser;
+    protected final List<T> clients = new CopyOnWriteArrayList<>();
 
     public MarketDataHandler(PriceConfiguration configuration,
                              PersistenceHandler persistenceHandler,
                              ConnectorFactory connectorFactory,
                              NonDriftingTimer timer) {
         this.marketDataProcessorMap = new HashMap<>();
-        this.phaser = new Phaser(configuration.instruments().size()) {
-            @Override
-            protected boolean onAdvance(int phase, int registeredParties) {
-                MarketDataHandler.this.clients.forEach(ClientSubscriptionProcessor::timeFrameProcessed);
-                return false;
-            }
-        };
         for (Instrument instrument : configuration.instruments()) {
             InstrumentDataProcessor mdp = new InstrumentDataProcessor(this, instrument, persistenceHandler.getCandleProcessors(), configuration);
             connectorFactory.getConnector(instrument).register(mdp);
             timer.add(mdp);
             marketDataProcessorMap.put(instrument.fullName(), mdp);
         }
+    }
+
+    public ClientSubscriptionProcessor createProcessor(SocketChannel channel){
+        return new ClientSubscriptionProcessor(channel, this);
     }
 
     public void start() {
@@ -53,15 +52,16 @@ public class MarketDataHandler {
         return marketDataProcessorMap.get(instrument);
     }
 
-    public void instrumentProcessed() {
-        phaser.arrive();
-    }
 
-    public void register(ClientSubscriptionProcessor clientSubscriptionProcessor) {
+    public void register(T clientSubscriptionProcessor) {
         this.clients.add(clientSubscriptionProcessor);
     }
 
-    public void deregister(ClientSubscriptionProcessor clientSubscriptionProcessor) {
+    public void deregister(T clientSubscriptionProcessor) {
         this.clients.remove(clientSubscriptionProcessor);
+    }
+
+    public void appendHandlers(EventHandlerGroup<MarketDataEvent> group) {
+
     }
 }

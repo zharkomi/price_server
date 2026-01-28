@@ -9,6 +9,8 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.websocketx.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.context.ApplicationContext;
 
 @Slf4j
 public class ClientConnectionHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
@@ -19,7 +21,7 @@ public class ClientConnectionHandler extends SimpleChannelInboundHandler<WebSock
 
     public ClientConnectionHandler(SocketChannel channel, ChannelGroup allChannels, MarketDataHandler marketDataHandler) {
         this.allChannels = allChannels;
-        this.clientSubscriptionProcessor = new ClientSubscriptionProcessor(channel, marketDataHandler);
+        this.clientSubscriptionProcessor = marketDataHandler.createProcessor(channel);
     }
 
     @Override

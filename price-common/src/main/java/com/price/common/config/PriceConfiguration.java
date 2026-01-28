@@ -8,7 +8,8 @@ import java.util.List;
 public record PriceConfiguration(List<Instrument> instruments,
                                  List<DataBase> dataBases,
                                  int httpPort,
-                                 int disruptorBufferSize) {
+                                 int disruptorBufferSize,
+                                 boolean aggregateEvents) {
 
     public static PriceConfiguration read() {
         String configFile = System.getenv(FileConfigurationReader.ENV_CONFIG_FILE);

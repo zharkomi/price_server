@@ -22,14 +22,13 @@ import java.util.concurrent.Executors;
 @Slf4j
 public class ClientSubscriptionProcessor implements CandleProcessor {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    protected final RingBuffer<CandleEvent> ringBuffer;
+    protected static final ObjectMapper MAPPER = new ObjectMapper();
+    protected final SocketChannel channel;
 
-    private final SocketChannel channel;
     private final MarketDataHandler marketDataHandler;
     private final Set<SubscriptionKey> subscriptions = ConcurrentHashMap.newKeySet();
-
     private final Disruptor<CandleEvent> disruptor;
-    private final RingBuffer<CandleEvent> ringBuffer;
 
     public ClientSubscriptionProcessor(SocketChannel channel, MarketDataHandler marketDataHandler) {
         this.channel = channel;
@@ -43,7 +42,7 @@ public class ClientSubscriptionProcessor implements CandleProcessor {
                 new YieldingWaitStrategy()
         );
 
-        disruptor.handleEventsWith(this::sendToChannel);
+        disruptor.handleEventsWith(this::sendEvent);
         this.ringBuffer = disruptor.getRingBuffer();
     }
 
@@ -87,30 +86,25 @@ public class ClientSubscriptionProcessor implements CandleProcessor {
 
     @Override
     public void handleCandleEvent(SubscriptionKey subscriptionKey, long time, double open, double high, double low, double close, long volume) {
-        if (subscriptions.contains(subscriptionKey)) {
-            log.debug("Processing candle event for {}", subscriptionKey);
-            long sequence = ringBuffer.next();
-            try {
-                CandleEvent event = ringBuffer.get(sequence);
-                event.instrument(subscriptionKey.instrument());
-                event.timeframeMs(subscriptionKey.timeframe());
-                event.time(time);
-                event.open(open);
-                event.high(high);
-                event.low(low);
-                event.close(close);
-                event.volume(volume);
-            } finally {
-                ringBuffer.publish(sequence);
-            }
+        log.debug("Processing candle event for {}", subscriptionKey);
+        long sequence = ringBuffer.next();
+        try {
+            CandleEvent event = ringBuffer.get(sequence);
+            event.endOfBatch(false);
+            event.instrument(subscriptionKey.instrument());
+            event.timeframeMs(subscriptionKey.timeframe());
+            event.time(time);
+            event.open(open);
+            event.high(high);
+            event.low(low);
+            event.close(close);
+            event.volume(volume);
+        } finally {
+            ringBuffer.publish(sequence);
         }
     }
 
-    public void timeFrameProcessed() {
-        // No aggregation - events sent directly in handleCandleEvent
-    }
-
-    private void sendToChannel(CandleEvent event, long sequence, boolean endOfBatch) {
+    protected void sendEvent(CandleEvent event, long sequence, boolean endOfBatch) {
         try {
             String json = MAPPER.writeValueAsString(event);
             channel.writeAndFlush(new TextWebSocketFrame(json));

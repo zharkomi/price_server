@@ -34,7 +34,8 @@ public class PropertyConfigurationReader {
                 instruments,
                 List.of(db),
                 Integer.parseInt(System.getenv().getOrDefault(ENV_HTTP_PORT, DEFAULT_HTTP_PORT)),
-                NumberUtils.toInt(System.getenv().getOrDefault(ENV_BUFFER_SIZE, DEFAULT_BUFFER_SIZE))
+                NumberUtils.toInt(System.getenv().getOrDefault(ENV_BUFFER_SIZE, DEFAULT_BUFFER_SIZE)),
+                true
         );
     }
 

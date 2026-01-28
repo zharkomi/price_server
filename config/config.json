@@ -20,5 +20,6 @@
     }
   ],
   "httpPort": 8080,
-  "disruptorBufferSize": 4096
+  "disruptorBufferSize": 4096,
+  "aggregateEvents": true
 }

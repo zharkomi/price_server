@@ -1,5 +1,6 @@
 package com.price.common.db;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.price.common.TraceableEvent;
@@ -32,4 +33,7 @@ public class CandleEvent extends TraceableEvent {
     private double close;
     @JsonProperty("v")
     private long volume;
+
+    @JsonIgnore
+    private boolean endOfBatch;
 }

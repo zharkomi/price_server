@@ -22,14 +22,12 @@ import java.util.function.Consumer;
 @Slf4j
 public class InstrumentDataProcessor implements PriceEventHandler, AutoCloseable {
     private final Instrument instrument;
-    // private final ClientNotifier clientNotifier;
     private final Disruptor<MarketDataEvent> disruptor;
     private final RingBuffer<MarketDataEvent> ringBuffer;
     private final Map<Integer, CandleAggregator> aggregators;
 
     public InstrumentDataProcessor(MarketDataHandler marketDataHandler, Instrument instrument, List<CandlePersistenceProcessor> candleProcessors, PriceConfiguration configuration) {
         this.instrument = instrument;
-        // this.clientNotifier = new ClientNotifier(marketDataHandler);
 
         disruptor = new Disruptor<>(
                 MarketDataEvent::new,
@@ -58,7 +56,7 @@ public class InstrumentDataProcessor implements PriceEventHandler, AutoCloseable
         if (group == null) {
             throw new IllegalArgumentException("At least one timeframe must be added for instrument: " + instrument.name());
         }
-        // group.handleEventsWith(clientNotifier);
+        marketDataHandler.appendHandlers(group);
         this.ringBuffer = disruptor.getRingBuffer();
     }
 

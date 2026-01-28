@@ -5,9 +5,9 @@ import com.price.stream.event.buffer.MarketDataEvent;
 
 public class ClientNotifier implements EventHandler<MarketDataEvent> {
 
-    private final MarketDataHandler marketDataHandler;
+    private final MarketDataAggregateHandler marketDataHandler;
 
-    public ClientNotifier(MarketDataHandler marketDataHandler) {
+    public ClientNotifier(MarketDataAggregateHandler marketDataHandler) {
         this.marketDataHandler = marketDataHandler;
     }
 
