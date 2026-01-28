@@ -1,8 +1,7 @@
 package com.price.stream.service;
 
 import com.price.common.config.PriceConfiguration;
-import com.price.stream.market.MarketDataProcessor;
-import com.price.stream.market.MarketDataProcessorFactory;
+import com.price.stream.market.MarketDataHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
@@ -18,8 +17,6 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
-
 @Slf4j
 @Service
 public class StreamService implements AutoCloseable {
@@ -27,15 +24,15 @@ public class StreamService implements AutoCloseable {
 
     private final int port;
     private final ChannelGroup allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    private final Map<String, MarketDataProcessor> marketDataProcessorMap;
+    private final MarketDataHandler marketDataHandler;
 
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
 
-    public StreamService(PriceConfiguration configuration, MarketDataProcessorFactory marketDataProcessorFactory) {
+    public StreamService(PriceConfiguration configuration, MarketDataHandler marketDataHandler) {
         this.port = configuration.httpPort() + 1;
-        this.marketDataProcessorMap = marketDataProcessorFactory.marketDataProcessorMap;
+        this.marketDataHandler = marketDataHandler;
     }
 
     public void start() {
@@ -54,7 +51,7 @@ public class StreamService implements AutoCloseable {
                             pipeline.addLast(new HttpObjectAggregator(65536));
                             pipeline.addLast(new WebSocketServerCompressionHandler());
                             pipeline.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true));
-                            pipeline.addLast(new ClientConnectionHandler(channel, allChannels, marketDataProcessorMap));
+                            pipeline.addLast(new ClientConnectionHandler(channel, allChannels, marketDataHandler));
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)

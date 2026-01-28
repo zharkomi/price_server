@@ -9,7 +9,7 @@ import com.price.common.config.PriceConfiguration;
 import com.price.common.config.Instrument;
 import com.price.common.source.PriceEventHandler;
 import com.price.stream.event.buffer.MarketDataEvent;
-import com.price.stream.service.SubscriptionProcessor;
+import com.price.stream.service.ClientSubscriptionProcessor;
 import com.price.stream.storage.CandlePersistenceProcessor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,15 +20,16 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 @Slf4j
-public class MarketDataProcessor implements PriceEventHandler, AutoCloseable {
+public class InstrumentDataProcessor implements PriceEventHandler, AutoCloseable {
     private final Instrument instrument;
-    private final ClientNotifier clientNotifier = new ClientNotifier();
+    // private final ClientNotifier clientNotifier;
     private final Disruptor<MarketDataEvent> disruptor;
     private final RingBuffer<MarketDataEvent> ringBuffer;
     private final Map<Integer, CandleAggregator> aggregators;
 
-    public MarketDataProcessor(Instrument instrument, List<CandlePersistenceProcessor> candleProcessors, PriceConfiguration configuration) {
+    public InstrumentDataProcessor(MarketDataHandler marketDataHandler, Instrument instrument, List<CandlePersistenceProcessor> candleProcessors, PriceConfiguration configuration) {
         this.instrument = instrument;
+        // this.clientNotifier = new ClientNotifier(marketDataHandler);
 
         disruptor = new Disruptor<>(
                 MarketDataEvent::new,
@@ -57,7 +58,7 @@ public class MarketDataProcessor implements PriceEventHandler, AutoCloseable {
         if (group == null) {
             throw new IllegalArgumentException("At least one timeframe must be added for instrument: " + instrument.name());
         }
-        group.handleEventsWith(clientNotifier);
+        // group.handleEventsWith(clientNotifier);
         this.ringBuffer = disruptor.getRingBuffer();
     }
 
@@ -102,14 +103,12 @@ public class MarketDataProcessor implements PriceEventHandler, AutoCloseable {
         disruptor.halt();
     }
 
-    public void subscribe(int timeframe, SubscriptionProcessor subscriptionProcessor) {
-        handle(timeframe, a -> a.subscribe(subscriptionProcessor));
-        clientNotifier.add(subscriptionProcessor);
+    public void subscribe(int timeframe, ClientSubscriptionProcessor clientSubscriptionProcessor) {
+        handle(timeframe, a -> a.subscribe(clientSubscriptionProcessor));
     }
 
-    public void unsubscribe(int timeframe, SubscriptionProcessor subscriptionProcessor) {
-        handle(timeframe, a -> a.unsubscribe(subscriptionProcessor));
-        clientNotifier.remove(subscriptionProcessor);
+    public void unsubscribe(int timeframe, ClientSubscriptionProcessor clientSubscriptionProcessor) {
+        handle(timeframe, a -> a.unsubscribe(clientSubscriptionProcessor));
     }
 
     private void handle(int timeframe, Consumer<CandleAggregator> command) {

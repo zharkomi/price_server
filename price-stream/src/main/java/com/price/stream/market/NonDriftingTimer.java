@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 public class NonDriftingTimer implements AutoCloseable {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private volatile boolean running = false;
-    private final List<MarketDataProcessor> processors = new CopyOnWriteArrayList<>();
+    private final List<InstrumentDataProcessor> processors = new CopyOnWriteArrayList<>();
 
     public void start() {
         running = true;
@@ -41,7 +41,7 @@ public class NonDriftingTimer implements AutoCloseable {
 
     private void handleEvent(long timestamp) {
         log.debug("Timer event at {}", timestamp);
-        for (MarketDataProcessor processor : processors) {
+        for (InstrumentDataProcessor processor : processors) {
             processor.handleTimerEvent(timestamp);
         }
     }
@@ -67,7 +67,7 @@ public class NonDriftingTimer implements AutoCloseable {
         }
     }
 
-    public void add(MarketDataProcessor mdp) {
+    public void add(InstrumentDataProcessor mdp) {
         processors.add(mdp);
     }
 }

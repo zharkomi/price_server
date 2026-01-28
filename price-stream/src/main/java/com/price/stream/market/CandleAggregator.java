@@ -5,7 +5,7 @@ import com.price.stream.common.CandleProcessor;
 import com.price.stream.common.SubscriptionKey;
 import com.price.common.config.Instrument;
 import com.price.stream.event.buffer.MarketDataEvent;
-import com.price.stream.service.SubscriptionProcessor;
+import com.price.stream.service.ClientSubscriptionProcessor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -103,11 +103,11 @@ public class CandleAggregator implements EventHandler<MarketDataEvent> {
         volume = 0;
     }
 
-    public void subscribe(SubscriptionProcessor subscriptionProcessor) {
-        candleProcessors.add(subscriptionProcessor);
+    public void subscribe(ClientSubscriptionProcessor clientSubscriptionProcessor) {
+        candleProcessors.add(clientSubscriptionProcessor);
     }
 
-    public void unsubscribe(SubscriptionProcessor subscriptionProcessor) {
-        candleProcessors.remove(subscriptionProcessor);
+    public void unsubscribe(ClientSubscriptionProcessor clientSubscriptionProcessor) {
+        candleProcessors.remove(clientSubscriptionProcessor);
     }
 }
