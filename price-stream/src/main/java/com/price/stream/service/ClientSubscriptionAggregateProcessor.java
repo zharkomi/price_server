@@ -1,7 +1,7 @@
 package com.price.stream.service;
 
 import com.price.common.db.CandleEvent;
-import com.price.stream.market.MarketDataHandler;
+import com.price.stream.market.MarketDataAggregateHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +10,11 @@ import lombok.extern.slf4j.Slf4j;
 public class ClientSubscriptionAggregateProcessor extends ClientSubscriptionProcessor {
 
     private final StringBuilder stringBuilder = new StringBuilder();
+    private final MarketDataAggregateHandler marketDataHandler;
 
-    public ClientSubscriptionAggregateProcessor(SocketChannel channel, MarketDataHandler marketDataHandler) {
-        super(channel, marketDataHandler);
+    public ClientSubscriptionAggregateProcessor(SocketChannel channel, MarketDataAggregateHandler marketDataHandler, int clientBufferSize) {
+        super(channel, marketDataHandler, clientBufferSize);
+        this.marketDataHandler = marketDataHandler;
     }
 
     public void timeFrameProcessed() {
@@ -48,5 +50,15 @@ public class ClientSubscriptionAggregateProcessor extends ClientSubscriptionProc
         } catch (Exception e) {
             log.error("Error serializing candle event", e);
         }
+    }
+
+    public synchronized void start() {
+        super.start();
+        this.marketDataHandler.register(this);
+    }
+
+    public synchronized void stop() {
+        marketDataHandler.deregister(this);
+        super.stop();
     }
 }

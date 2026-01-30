@@ -31,7 +31,7 @@ public class InstrumentDataProcessor implements PriceEventHandler, AutoCloseable
 
         disruptor = new Disruptor<>(
                 MarketDataEvent::new,
-                configuration.disruptorBufferSize(),
+                configuration.marketDataBufferSize(),
                 Executors.defaultThreadFactory(),
                 ProducerType.MULTI,
                 new YieldingWaitStrategy()

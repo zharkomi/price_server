@@ -20,6 +20,7 @@
     }
   ],
   "httpPort": 8080,
-  "disruptorBufferSize": 4096,
+  "marketDataBufferSize": 4096,
+  "clientBufferSize": 1024,
   "aggregateEvents": true
 }

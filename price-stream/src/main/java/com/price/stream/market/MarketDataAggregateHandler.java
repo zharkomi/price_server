@@ -8,12 +8,15 @@ import com.price.stream.storage.PersistenceHandler;
 import io.netty.channel.socket.SocketChannel;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Phaser;
 
 @Slf4j
-public class MarketDataAggregateHandler extends MarketDataHandler<ClientSubscriptionAggregateProcessor> {
+public class MarketDataAggregateHandler extends MarketDataHandler {
 
     private final Phaser phaser;
+    protected final List<ClientSubscriptionAggregateProcessor> clients = new CopyOnWriteArrayList<>();
 
     public MarketDataAggregateHandler(PriceConfiguration configuration, PersistenceHandler persistenceHandler, ConnectorFactory connectorFactory, NonDriftingTimer timer) {
         super(configuration, persistenceHandler, connectorFactory, timer);
@@ -29,11 +32,19 @@ public class MarketDataAggregateHandler extends MarketDataHandler<ClientSubscrip
 
     @Override
     public ClientSubscriptionAggregateProcessor createProcessor(SocketChannel channel){
-        return new ClientSubscriptionAggregateProcessor(channel, this);
+        return new ClientSubscriptionAggregateProcessor(channel, this, clientBufferSize);
     }
 
     public void appendHandlers(EventHandlerGroup<MarketDataEvent> group) {
         group.handleEventsWith(new ClientNotifier(this));
+    }
+
+    public void register(ClientSubscriptionAggregateProcessor clientSubscriptionProcessor) {
+        this.clients.add(clientSubscriptionProcessor);
+    }
+
+    public void deregister(ClientSubscriptionAggregateProcessor clientSubscriptionProcessor) {
+        this.clients.remove(clientSubscriptionProcessor);
     }
 
     public void instrumentProcessed() {

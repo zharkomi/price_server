@@ -97,11 +97,3 @@ com.price.db
 | `HistoryService` | Parses timeframes, queries repository, formats response |
 | `HistoryResponse` | DTO with compact field names for JSON serialization |
 | `ClickHouseRepository` | HikariCP-based ClickHouse query implementation |
-
-## Testing
-
-```bash
-./gradlew :price-query:test
-```
-
-Tests use MockMvc for controller testing with mocked services.

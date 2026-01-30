@@ -21,7 +21,7 @@ public class CandlePersistenceProcessor implements CandleProcessor, AutoCloseabl
     public CandlePersistenceProcessor(SaveRepository repository, PriceConfiguration configuration) {
         disruptor = new Disruptor<>(
                 CandleEvent::new,
-                configuration.disruptorBufferSize(),
+                configuration.marketDataBufferSize(),
                 Executors.defaultThreadFactory(),
                 ProducerType.MULTI,
                 new YieldingWaitStrategy()

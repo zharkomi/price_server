@@ -28,6 +28,13 @@ The system uses two segregated LMAX Disruptor ring buffers:
 - Single consumer (`ClickHouseRepository`) for batch writes
 - Uses `isEndOfBatch()` detection for efficient database operations
 
+**Buffer Configuration:**
+
+| Property | Used By | Default | Description |
+|----------|---------|---------|-------------|
+| `marketDataBufferSize` | `InstrumentDataProcessor`, `CandlePersistenceProcessor` | 4096 | Buffer for market data and persistence pipelines |
+| `clientBufferSize` | `ClientSubscriptionProcessor` | 1024 | Buffer for per-client WebSocket event queues |
+
 **Benefits:**
 - Input buffers handle high-frequency market data without storage latency
 - Output buffer batches writes to storage efficiently
@@ -137,24 +144,3 @@ com.price.stream
 com.price.db
 └── ClickHouseRepository.java            # Storage implementation
 ```
-
-## Performance
-
-- **Input throughput**: 100K+ market events/second per instrument
-- **Output throughput**: 100K+ candles/second batch insert
-- **Latency**: Sub-millisecond market data processing
-- **No blocking**: Storage operations never block market data
-
-## Adding New Exchange Support
-
-1. Add value to `Source` enum in `price-common`
-2. Create connector class implementing `Connector` interface:
-   ```java
-   public class NewExchangeConnector implements Connector {
-       void register(MarketDataProcessor processor);
-       void start();
-       void close();
-   }
-   ```
-3. Update `ConnectorFactory` to handle new source
-4. Convert exchange data format to `MarketDataEvent`

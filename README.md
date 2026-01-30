@@ -17,7 +17,7 @@ The project is split into modules:
 
 ## Key Features
 
-- **Real-time data collection** from cryptocurrency exchanges (Binance)
+- **Real-time data collection** from exchanges
 - **Multi-timeframe aggregation** - configure multiple timeframes per instrument
 - **High-performance architecture** using LMAX Disruptor for lock-free event processing
 - **WebSocket streaming** - subscribe to real-time candle updates via Netty WebSocket
@@ -100,16 +100,7 @@ To clear the cache: `docker builder prune`
 | **Smaller images** | ~300MB final image vs 1GB+ with full JDK |
 | **Faster rebuilds** | Gradle cache persists; only changed code recompiles |
 | **Security** | No build tools, compilers, or source code in production image |
-| **Container-aware JVM** | Uses `-XX:+UseContainerSupport` and `-XX:MaxRAMPercentage=75.0` |
 
-**JVM Configuration:**
-```
--Xms500m -Xmx1g                      # Initial/max heap
--XX:+UseContainerSupport             # Respect container memory limits
--XX:MaxRAMPercentage=75.0            # Use 75% of container memory
--XX:+HeapDumpOnOutOfMemoryError      # Dump heap on OOM
--Xlog:gc*:file=/app/logs/gc.log      # GC logging with rotation
-```
 
 ## Configuration
 
@@ -134,7 +125,8 @@ Set `CONFIG_FILE` environment variable to point to your config file:
     }
   ],
   "httpPort": 8080,
-  "disruptorBufferSize": 4096
+  "marketDataBufferSize": 4096,
+  "clientBufferSize": 1024
 }
 ```
 
@@ -145,7 +137,8 @@ Set `CONFIG_FILE` environment variable to point to your config file:
 | `CONFIG_FILE` | Path to JSON config file | - |
 | `ps.instruments` | Comma-separated instruments (e.g., `BTCUSDT@BINANCE`) | - |
 | `ps.timeframe.{SYMBOL}@{SOURCE}` | Timeframes for instrument (e.g., `1m,5m,1h`) | - |
-| `ps.buffer.size` | Disruptor ring buffer size (power of 2) | 4096 |
+| `ps.market.data.buffer.size` | Market data Disruptor buffer size (power of 2) | 4096 |
+| `ps.client.buffer.size` | Client subscription buffer size (power of 2) | 1024 |
 | `ps.http.port` | HTTP server port | 8080 |
 | `ps.clickhouse.url` | ClickHouse JDBC URL | `jdbc:clickhouse://localhost:8123` |
 | `ps.clickhouse.user` | ClickHouse username | `default` |
@@ -159,26 +152,6 @@ Timeframes use format `<number><unit>`:
 - `m` - minutes (e.g., `1m`, `5m`, `15m`)
 - `h` - hours (e.g., `1h`, `4h`)
 - `d` - days (e.g., `1d`)
-
-## Storage Layer
-
-### ClickHouse Schema
-
-```sql
-CREATE TABLE trade_candles (
-    instrument       LowCardinality(String),  -- "BTCUSDT@BINANCE"
-    timeframe_ms     UInt32,                   -- Timeframe in milliseconds
-    time             UInt64,                   -- Unix epoch in ms
-    open             Float64,
-    high             Float64,
-    low              Float64,
-    close            Float64,
-    volume           Float64
-)
-ENGINE = ReplacingMergeTree()
-PARTITION BY (instrument, timeframe_ms, toDate(time / 1000))
-ORDER BY (instrument, timeframe_ms, time)
-```
 
 ## Development
 

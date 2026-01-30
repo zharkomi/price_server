@@ -7,25 +7,23 @@ import com.price.stream.event.buffer.MarketDataEvent;
 import com.price.stream.service.ClientSubscriptionProcessor;
 import com.price.stream.storage.PersistenceHandler;
 import io.netty.channel.socket.SocketChannel;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Phaser;
 
-public class MarketDataHandler<T extends ClientSubscriptionProcessor> {
+public class MarketDataHandler {
 
     private final Map<String, InstrumentDataProcessor> marketDataProcessorMap;
-    protected final List<T> clients = new CopyOnWriteArrayList<>();
+    protected final int clientBufferSize;
 
     public MarketDataHandler(PriceConfiguration configuration,
                              PersistenceHandler persistenceHandler,
                              ConnectorFactory connectorFactory,
                              NonDriftingTimer timer) {
         this.marketDataProcessorMap = new HashMap<>();
+        this.clientBufferSize = configuration.clientBufferSize();
         for (Instrument instrument : configuration.instruments()) {
             InstrumentDataProcessor mdp = new InstrumentDataProcessor(this, instrument, persistenceHandler.getCandleProcessors(), configuration);
             connectorFactory.getConnector(instrument).register(mdp);
@@ -34,8 +32,8 @@ public class MarketDataHandler<T extends ClientSubscriptionProcessor> {
         }
     }
 
-    public ClientSubscriptionProcessor createProcessor(SocketChannel channel){
-        return new ClientSubscriptionProcessor(channel, this);
+    public ClientSubscriptionProcessor createProcessor(SocketChannel channel) {
+        return new ClientSubscriptionProcessor(channel, this, clientBufferSize);
     }
 
     public void start() {
@@ -50,15 +48,6 @@ public class MarketDataHandler<T extends ClientSubscriptionProcessor> {
 
     public InstrumentDataProcessor get(String instrument) {
         return marketDataProcessorMap.get(instrument);
-    }
-
-
-    public void register(T clientSubscriptionProcessor) {
-        this.clients.add(clientSubscriptionProcessor);
-    }
-
-    public void deregister(T clientSubscriptionProcessor) {
-        this.clients.remove(clientSubscriptionProcessor);
     }
 
     public void appendHandlers(EventHandlerGroup<MarketDataEvent> group) {

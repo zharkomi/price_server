@@ -30,13 +30,13 @@ public class ClientSubscriptionProcessor implements CandleProcessor {
     private final Set<SubscriptionKey> subscriptions = ConcurrentHashMap.newKeySet();
     private final Disruptor<CandleEvent> disruptor;
 
-    public ClientSubscriptionProcessor(SocketChannel channel, MarketDataHandler marketDataHandler) {
+    public ClientSubscriptionProcessor(SocketChannel channel, MarketDataHandler marketDataHandler, int clientBufferSize) {
         this.channel = channel;
         this.marketDataHandler = marketDataHandler;
 
         this.disruptor = new Disruptor<>(
                 CandleEvent::new,
-                1024,
+                clientBufferSize,
                 Executors.defaultThreadFactory(),
                 ProducerType.MULTI,
                 new YieldingWaitStrategy()
@@ -46,9 +46,15 @@ public class ClientSubscriptionProcessor implements CandleProcessor {
         this.ringBuffer = disruptor.getRingBuffer();
     }
 
-    public void start() {
+    public synchronized void start() {
         disruptor.start();
-        this.marketDataHandler.register(this);
+    }
+
+    public synchronized void stop() {
+        for (SubscriptionKey key : new ArrayList<>(subscriptions)) {
+            unsubscribe(key.instrument(), key.timeframe());
+        }
+        disruptor.halt();
     }
 
     public synchronized void subscribe(String instrument, int timeframe) {
@@ -74,14 +80,6 @@ public class ClientSubscriptionProcessor implements CandleProcessor {
                 log.info("Unsubscribed from {} with timeframe {}", instrument, timeframe);
             }
         }
-    }
-
-    public synchronized void stop() {
-        for (SubscriptionKey key : new ArrayList<>(subscriptions)) {
-            unsubscribe(key.instrument(), key.timeframe());
-        }
-        marketDataHandler.deregister(this);
-        disruptor.halt();
     }
 
     @Override

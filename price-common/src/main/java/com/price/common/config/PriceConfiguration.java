@@ -8,7 +8,8 @@ import java.util.List;
 public record PriceConfiguration(List<Instrument> instruments,
                                  List<DataBase> dataBases,
                                  int httpPort,
-                                 int disruptorBufferSize,
+                                 int marketDataBufferSize,
+                                 int clientBufferSize,
                                  boolean aggregateEvents) {
 
     public static PriceConfiguration read() {

@@ -8,7 +8,8 @@ import java.util.List;
 
 public class PropertyConfigurationReader {
 
-    public static final String ENV_BUFFER_SIZE = "ps.buffer.size";
+    public static final String ENV_MARKET_DATA_BUFFER_SIZE = "ps.market.data.buffer.size";
+    public static final String ENV_CLIENT_BUFFER_SIZE = "ps.client.buffer.size";
     private static final String ENV_INSTRUMENTS = "ps.instruments";
     private static final String ENV_TIMEFRAME_PREFIX = "ps.timeframe.";
     private static final String ENV_REPOSITORY_TYPE = "ps.repository.type";
@@ -18,7 +19,8 @@ public class PropertyConfigurationReader {
     private static final String ENV_HTTP_PORT = "ps.http.port";
     private static final String INSTRUMENT_DELIMITER = ",";
     private static final String INSTRUMENT_SEPARATOR = "@";
-    public static final String DEFAULT_BUFFER_SIZE = "4096";
+    public static final String DEFAULT_MARKET_DATA_BUFFER_SIZE = "4096";
+    public static final String DEFAULT_CLIENT_BUFFER_SIZE = "1024";
     public static final String DEFAULT_REPOSITORY_TYPE = "com.price.stream.storage.db.ClickHouseRepository";
     public static final String DEFAULT_HTTP_PORT = "8080";
 
@@ -34,7 +36,8 @@ public class PropertyConfigurationReader {
                 instruments,
                 List.of(db),
                 Integer.parseInt(System.getenv().getOrDefault(ENV_HTTP_PORT, DEFAULT_HTTP_PORT)),
-                NumberUtils.toInt(System.getenv().getOrDefault(ENV_BUFFER_SIZE, DEFAULT_BUFFER_SIZE)),
+                NumberUtils.toInt(System.getenv().getOrDefault(ENV_MARKET_DATA_BUFFER_SIZE, DEFAULT_MARKET_DATA_BUFFER_SIZE)),
+                NumberUtils.toInt(System.getenv().getOrDefault(ENV_CLIENT_BUFFER_SIZE, DEFAULT_CLIENT_BUFFER_SIZE)),
                 true
         );
     }
