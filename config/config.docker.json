@@ -1,0 +1,26 @@
+{
+  "instruments": [
+    {
+      "name": "BTCUSDT",
+      "source": "binance",
+      "timeframes": ["1m", "5s", "15m", "1h"]
+    },
+    {
+      "name": "ETHUSDT",
+      "source": "binance",
+      "timeframes": ["5s","10s", "5m"]
+    }
+  ],
+  "dataBases": [
+    {
+      "type": "clickhouse",
+      "url": "jdbc:clickhouse://clickhouse:8123",
+      "user": "default",
+      "password": "000"
+    }
+  ],
+  "httpPort": 8080,
+  "marketDataBufferSize": 4096,
+  "clientBufferSize": 1024,
+  "aggregateEvents": true
+}

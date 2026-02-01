@@ -31,7 +31,7 @@ public class MarketDataAggregateHandler extends MarketDataHandler {
     }
 
     @Override
-    public ClientSubscriptionAggregateProcessor createProcessor(SocketChannel channel){
+    public ClientSubscriptionAggregateProcessor createProcessor(SocketChannel channel) {
         return new ClientSubscriptionAggregateProcessor(channel, this, clientBufferSize);
     }
 
@@ -49,6 +49,10 @@ public class MarketDataAggregateHandler extends MarketDataHandler {
 
     public void instrumentProcessed() {
         log.debug("Instrument processed");
-        phaser.arrive();
+        try {
+            phaser.arriveAndAwaitAdvance();
+        } catch (Exception e) {
+            log.error("Error waiting for other instruments to process", e);
+        }
     }
 }

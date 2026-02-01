@@ -12,12 +12,25 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class Connector implements com.price.common.source.Connector {
     private static final Logger logger = LoggerFactory.getLogger(Connector.class);
 
+    private static final int RECONNECT_DELAY_SECONDS = 5;
+
     private final Map<String, PriceEventHandler> handlersBySymbol = new ConcurrentHashMap<>();
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final ScheduledExecutorService reconnectScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "binance-reconnect");
+        t.setDaemon(true);
+        return t;
+    });
+
     private WebSocketStreamClient wsClient;
     private int connectionId;
 
@@ -25,6 +38,16 @@ public class Connector implements com.price.common.source.Connector {
     public void start() {
         if (handlersBySymbol.isEmpty()) {
             logger.warn("No handlers registered, not starting WebSocket connection");
+            return;
+        }
+
+        running.set(true);
+        connect();
+    }
+
+    private void connect() {
+        if (!running.get()) {
+            logger.info("Connector is stopped, skipping connection attempt");
             return;
         }
 
@@ -38,10 +61,53 @@ public class Connector implements com.price.common.source.Connector {
 
         logger.info("Starting Binance WebSocket connection for streams: {}", streamNames);
 
-        // Connect to the combined book ticker stream
-        connectionId = wsClient.combineStreams(streamNames, this::onMessage);
+        // Connect to the combined book ticker stream with callbacks
+        connectionId = wsClient.combineStreams(
+            streamNames,
+            this::onOpen,
+            this::onMessage,
+            this::onClosing,
+            this::onClosed,
+            this::onFailure
+        );
 
         logger.info("Binance WebSocket connection started with ID: {}", connectionId);
+    }
+
+    private void onOpen(okhttp3.Response response) {
+        logger.info("Binance WebSocket connection opened: {}", response);
+    }
+
+    private void onClosing(int code, String reason) {
+        logger.info("Binance WebSocket connection closing: code={}, reason={}", code, reason);
+    }
+
+    private void onClosed(int code, String reason) {
+        logger.info("Binance WebSocket connection closed: code={}, reason={}", code, reason);
+        scheduleReconnect();
+    }
+
+    private void onFailure(Throwable cause, okhttp3.Response response) {
+        logger.error("Binance WebSocket connection failure: {}", response, cause);
+        scheduleReconnect();
+    }
+
+    private void scheduleReconnect() {
+        if (!running.get()) {
+            logger.info("Connector is stopped, not reconnecting");
+            return;
+        }
+
+        logger.info("Scheduling reconnection in {} seconds", RECONNECT_DELAY_SECONDS);
+
+        reconnectScheduler.schedule(() -> {
+            try {
+                connect();
+            } catch (Exception e) {
+                logger.error("Reconnection failed", e);
+                scheduleReconnect();
+            }
+        }, RECONNECT_DELAY_SECONDS, TimeUnit.SECONDS);
     }
 
     @Override
@@ -105,6 +171,8 @@ public class Connector implements com.price.common.source.Connector {
     @Override
     public void close() throws Exception {
         logger.info("Closing Binance WebSocket connection");
+        running.set(false);
+        reconnectScheduler.shutdownNow();
         if (wsClient != null) {
             wsClient.closeConnection(connectionId);
             wsClient.closeAllConnections();
